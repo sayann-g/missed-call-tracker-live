@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrack Missed Call Tracker — Live API</title>
+<!-- No PapaParse needed — data comes from MightyCall API via local proxy -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700&family=Google+Sans+Text:ital,wght@0,400;0,500;0,700&family=Google+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a73e8;--blue-dark:#1557b0;--blue-light:#e8f0fe;
+  --red:#d93025;--red-light:#fce8e6;
+  --green:#1e8e3e;--green-light:#e6f4ea;
+  --yellow-light:#fef7e0;--yellow-text:#6b4c00;
+  --g50:#f8f9fa;--g100:#f1f3f4;--g200:#e8eaed;--g300:#dadce0;
+  --g400:#bdc1c6;--g500:#80868b;--g600:#3c4043;--g700:#202124;
+  --g800:#111113;--g900:#080808;
+  --surface:#fff;--radius:8px;--radius-lg:12px;
+  --shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);
+  --font:'Google Sans','Product Sans',system-ui,sans-serif;
+  --font-text:'Google Sans Text','Google Sans',system-ui,sans-serif;
+  --font-mono:'Google Sans Mono','Roboto Mono',monospace;
+}
+
+/* ── GLOBAL BASE ── */
+html{font-size:16px}
+body{
+  font-family:var(--font-text);
+  background:var(--g100);
+  color:var(--g800);
+  min-height:100vh;
+  padding:20px 32px 56px;
+  line-height:1.6;
+  font-weight:400;
+  font-size:15px;
+  letter-spacing:.01em;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+/* Force Google Sans on every element — override browser defaults */
+*{font-family:inherit}
+button,input,select,textarea{font-family:var(--font);font-size:inherit}
+.wrap{max-width:100%;margin:0 auto}
+
+/* ── HEADER ── */
+.app-header{display:flex;align-items:center;gap:16px;padding:0 4px 24px}
+.logo{width:44px;height:44px;border-radius:10px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:24px;height:24px;fill:#fff}
+.app-title{font-family:var(--font);font-size:22px;font-weight:700;color:#111113;letter-spacing:-.3px;line-height:1.2}
+.app-sub{font-size:13px;color:#3c4043;margin-top:4px;font-family:var(--font-text);font-weight:400;letter-spacing:0}
+
+/* ── CARD ── */
+.card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-hd{padding:16px 22px 14px;border-bottom:1px solid var(--g200);display:flex;align-items:center;gap:10px}
+.card-hd h2{font-family:var(--font);font-size:15px;font-weight:600;color:#111113;letter-spacing:-.1px}
+.card-bd{padding:22px}
+
+/* ── UPLOAD ── */
+.upload-zone{border:2px dashed var(--g300);border-radius:var(--radius);padding:16px 20px;cursor:pointer;transition:border-color .2s,background .2s;position:relative;background:var(--g50);display:flex;align-items:center;gap:14px}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-light)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone .uz-icon{font-size:24px;display:block;flex-shrink:0}
+.upload-zone h3{font-family:var(--font);font-size:14px;font-weight:600;color:#111113;text-align:left;line-height:1.3}
+.upload-zone p{font-size:13px;color:#3c4043;margin-top:3px;text-align:left;font-weight:400;font-family:var(--font-text)}
+.upload-zone.ok{border-color:var(--green);background:var(--green-light)}
+.upload-zone.ok h3{color:var(--green)}
+.parse-status{
+  display:none;margin-top:12px;padding:10px 14px;
+  background:var(--g50);border-left:3px solid var(--blue);border-radius:6px;
+  font-family:var(--font-text);font-size:13px;color:#202124;
+  font-weight:400;line-height:1.6;letter-spacing:0
+}
+
+/* ── FILTERS ── */
+.filters-row{display:grid;grid-template-columns:220px 180px 180px;gap:16px;margin-top:16px;align-items:end}
+@media(max-width:700px){.filters-row{grid-template-columns:1fr 1fr}}
+.f-label{
+  display:block;font-family:var(--font);font-size:12px;font-weight:500;
+  color:#3c4043;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px
+}
+input[type=date],input[type=time]{
+  width:100%;font-family:var(--font-text);font-size:14px;font-weight:400;
+  padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);
+  background:var(--surface);color:#111113;outline:none;
+  transition:border-color .15s,box-shadow .15s;letter-spacing:0
+}
+input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15)}
+
+/* ── BUTTONS ── */
+.btn-primary{
+  font-family:var(--font);font-size:14px;font-weight:500;
+  background:var(--blue);color:#fff;border:none;border-radius:var(--radius);
+  padding:11px 28px;cursor:pointer;letter-spacing:.2px;
+  transition:background .15s;margin-top:16px;white-space:nowrap;display:inline-block
+}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-primary:disabled{background:var(--g400);cursor:not-allowed}
+.qs-btn{font-family:var(--font);font-size:12px;font-weight:500;padding:5px 11px;border:1.5px solid var(--g300);border-radius:6px;background:#fff;color:var(--g700);cursor:pointer;transition:all .12s;white-space:nowrap}
+.qs-btn:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
+.qs-btn.qs-active{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark);font-weight:600}
+.btn-sm{
+  font-family:var(--font);font-size:13px;font-weight:500;
+  border:1.5px solid var(--g300);border-radius:6px;padding:6px 16px;
+  cursor:pointer;background:var(--surface);color:var(--g700);
+  transition:background .15s;letter-spacing:.1px
+}
+.btn-sm:hover{background:var(--g100)}
+.btn-sm.ok{background:var(--green-light);color:var(--green);border-color:var(--green)}
+
+/* ── ERROR ── */
+.error-msg{
+  display:none;margin-top:12px;padding:11px 15px;
+  background:var(--red-light);color:#b31412;border-radius:var(--radius);
+  font-size:14px;font-family:var(--font-text);font-weight:400
+}
+
+/* ── PERIOD BANNER ── */
+.period-banner{
+  display:none;background:var(--blue-light);border-radius:var(--radius);
+  padding:11px 18px;font-family:var(--font);font-size:14px;font-weight:500;
+  color:var(--blue-dark);margin-bottom:16px;letter-spacing:.1px;
+  align-items:center;justify-content:space-between;gap:12px
+}
+.period-banner .pb-sync{font-size:13px;font-weight:600;color:var(--blue-dark);white-space:nowrap;flex-shrink:0}
+
+/* ── STATS TILES ── */
+.stats-row{display:none;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
+.stat .s-lbl{
+  font-family:var(--font);font-size:10.5px;font-weight:500;
+  color:#3c4043;text-transform:uppercase;letter-spacing:.6px;line-height:1.4
+}
+.stat .s-val{
+  font-family:var(--font);font-size:28px;font-weight:700;
+  margin-top:6px;color:#111113;line-height:1.1
+}
+.stat.blue .s-val{color:var(--blue)}
+.stat.red .s-val{color:var(--red)}
+.stat.green .s-val{color:var(--green)}
+.stat.amber .s-val{color:#b06000}
+.stat.indigo .s-val{color:#5c35cc}
+.stat.teal .s-val{color:#007b83}
+
+/* ── ANALYSIS CARD ── */
+.analysis-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;display:none}
+.analysis-hd{
+  padding:14px 20px;background:var(--g50);
+  border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;justify-content:space-between;gap:12px
+}
+.analysis-hd span{font-family:var(--font);font-size:15px;font-weight:600;color:#111113}
+.analysis-actions{display:flex;gap:10px;align-items:center}
+.analysis-body{
+  padding:20px 22px;
+  font-family:var(--font-text);font-size:14px;font-weight:400;
+  color:#111113;line-height:1.85;
+  white-space:pre-wrap;word-break:break-word;
+  max-height:380px;overflow-y:auto
+}
+
+/* ── TABLE CARD ── */
+.tbl-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;display:none}
+.tbl-hd{
+  padding:14px 20px;background:var(--g50);
+  border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;gap:10px
+}
+.tbl-hd h3{font-family:var(--font);font-size:15px;font-weight:600;color:#111113}
+.badge{
+  display:inline-flex;align-items:center;
+  padding:3px 11px;border-radius:20px;
+  font-family:var(--font);font-size:12px;font-weight:500
+}
+.badge.red{background:var(--red-light);color:#b31412}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.blue{background:var(--blue-light);color:var(--blue-dark)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+thead th{
+  text-align:left;
+  padding:11px 16px;
+  font-family:var(--font);
+  font-size:11.5px;
+  font-weight:600;
+  color:#3c4043;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  background:#f1f3f4;
+  border-bottom:2px solid #dadce0;
+  white-space:nowrap
+}
+tbody td{
+  padding:13px 16px;
+  border-bottom:1px solid var(--g200);
+  font-family:var(--font-text);
+  font-size:14px;
+  font-weight:400;
+  color:#111113;
+  vertical-align:middle;
+  line-height:1.45
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f0f4ff}
+tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:15px}
+.mono{
+  font-family:var(--font-text);
+  font-size:13.5px;
+  color:#202124;
+  font-weight:400;
+  letter-spacing:0
+}
+.pill{
+  display:inline-block;padding:3px 10px;border-radius:5px;
+  font-family:var(--font);font-size:12px;font-weight:500;
+  margin:1px 2px;letter-spacing:.1px;line-height:1.5
+}
+.pm{background:#fce8e6;color:#b31412;font-weight:600}
+.pv{background:#fef0c7;color:#5a3e00;font-weight:600}
+.pd{background:#fce8e6;color:#a50e0e;font-weight:600}
+.pc{background:#e6f4ea;color:#0d652d;font-weight:600}
+.no-data{
+  text-align:center;padding:40px;
+  color:#5f6368;font-family:var(--font);
+  font-size:15px;font-weight:400
+}
+
+/* ── SKIPPED ROWS PANEL ── */
+#skippedPanel button{font-family:var(--font)!important;font-size:13px!important}
+
+/* ── AGENT TABLE HIGHLIGHT COLUMNS ── */
+.th-highlight{background:#e8f0fe!important;color:#1557b0!important;font-weight:700!important}
+.td-highlight{background:#e8f0fe!important;font-weight:700!important;color:#1a56b0!important;font-size:14px!important}
+
+/* ── SPINNER ── */
+.spinner-wrap{display:none;text-align:center;padding:40px;color:var(--g600);font-family:var(--font);font-size:15px;font-weight:400}
+.spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── PDF PAGE BREAK ── */
+.pdf-page-break{display:none}
+
+/* ── PDF EXPORT BUTTON & DROPDOWN ── */
+.btn-pdf{
+  font-family:var(--font);font-size:13px;font-weight:500;
+  border:1.5px solid var(--blue);border-radius:6px;padding:6px 16px;
+  cursor:pointer;background:var(--blue-light);color:var(--blue-dark);
+  transition:background .15s;white-space:nowrap
+}
+.btn-pdf:hover{background:#d2e3fc}
+.pdf-dropdown-wrap{position:relative;display:inline-block}
+.pdf-menu{
+  display:none;position:absolute;right:0;top:calc(100% + 6px);
+  background:var(--surface);border:1px solid var(--g200);
+  border-radius:var(--radius);box-shadow:0 4px 16px rgba(60,64,67,.22);
+  min-width:190px;z-index:999;overflow:hidden
+}
+.pdf-menu.open{display:block}
+.pdf-menu-label{
+  font-family:var(--font);font-size:11px;font-weight:500;color:var(--g500);
+  text-transform:uppercase;letter-spacing:.7px;padding:10px 16px 4px
+}
+.pdf-menu-item{
+  display:block;width:100%;text-align:left;
+  font-family:var(--font);font-size:14px;font-weight:400;
+  color:var(--g800);background:none;border:none;
+  padding:10px 16px;cursor:pointer;transition:background .12s
+}
+.pdf-menu-item:hover{background:var(--g50)}
+
+/* ── PRINT / PDF STYLES ── */
+@media print{
+  body{background:#fff!important;padding:8mm 10mm!important;font-size:10px;font-family:'Google Sans','Product Sans',sans-serif!important}
+  *{font-family:'Google Sans','Product Sans',sans-serif!important}
+  .wrap{max-width:100%!important}
+  .card,.no-print,.period-banner,.app-header{display:none!important}
+  .pdf-page-break{display:block!important;page-break-before:always;break-before:page}
+  .stats-row{display:grid!important;grid-template-columns:repeat(6,1fr)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .stat{box-shadow:none!important;border:1px solid #e8eaed!important;break-inside:avoid;background:#fff!important;padding:6px 8px!important}
+  .stat .s-lbl{font-size:7px!important;letter-spacing:.3px!important}
+  .stat .s-val{font-size:18px!important;margin-top:3px!important}
+  .stat.blue .s-val{color:#1a73e8!important}
+  .stat.red .s-val{color:#d93025!important}
+  .stat.green .s-val{color:#1e8e3e!important}
+  .stat.amber .s-val{color:#b06000!important}
+  .stat.indigo .s-val{color:#5c35cc!important}
+  .stat.teal .s-val{color:#007b83!important}
+  .analysis-card,.tbl-card{display:block!important;box-shadow:none!important;border:1px solid #e8eaed!important;break-inside:avoid;margin-bottom:10px;background:#fff!important}
+  .analysis-hd{background:#f8f9fa!important;padding:7px 12px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .analysis-hd span{font-size:11px!important}
+  .analysis-body{max-height:none!important;overflow:visible!important;background:#fff!important;color:#202124!important;font-size:9px!important;line-height:1.65!important;padding:10px 12px!important}
+  .analysis-actions,.btn-pdf,.btn-sm,.pdf-dropdown-wrap{display:none!important}
+  .tbl-hd{background:#f8f9fa!important;padding:7px 12px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tbl-hd h3{font-size:11px!important;color:#202124!important}
+  .badge{font-size:8px!important;padding:1px 6px!important}
+  thead th{background:#f8f9fa!important;font-size:8px!important;padding:5px 7px!important;letter-spacing:.3px!important;color:#3c4043!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-bottom:1.5px solid #dadce0!important}
+  tbody td{font-size:9px!important;padding:5px 7px!important;line-height:1.35!important;color:#202124!important}
+  tbody td strong{font-size:10px!important}
+  .mono{font-size:8.5px!important;color:#3c4043!important}
+  .pill{font-size:7.5px!important;padding:1px 5px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pm{background:#fce8e6!important;color:#c5221f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pv{background:#fef7e0!important;color:#6b4c00!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pd{background:#fce8e6!important;color:#9c1a16!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pc{background:#e6f4ea!important;color:#137333!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .badge.red{background:#fce8e6!important;color:#c5221f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .badge.green{background:#e6f4ea!important;color:#137333!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .badge.blue{background:#e8f0fe!important;color:#1557b0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pdf-header{display:block!important}
+  .pdf-header div[style*="font-size:18px"]{font-size:14px!important}
+  #analysisCardCB{display:block!important}
+  table{width:100%!important}
+  td,th{white-space:nowrap}
+  @page{margin:10mm 8mm;size:A4 landscape}
+}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="app-header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg>
+    </div>
+    <div>
+      <div class="app-title">Matrack Missed Call Tracker</div>
+      <div class="app-sub">Live API · Auto-sync from MightyCall · Matrack Support Team</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;flex-shrink:0">
+      <div id="clockTime" style="font-family:var(--font);font-size:18px;font-weight:700;color:#111113;letter-spacing:-.2px;line-height:1.2;font-variant-numeric:tabular-nums">--:-- --</div>
+      <div id="clockDate" style="font-size:12px;color:#3c4043;margin-top:2px;font-family:var(--font-text)">---</div>
+      <div id="clockTZ"   style="font-size:11px;color:#80868b;margin-top:1px;font-family:var(--font)">---</div>
+    </div>
+  </div>
+
+  <!-- API CONNECTION CARD -->
+  <div class="card" id="apiCard">
+    <div class="card-hd">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g600)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+      <h2>MightyCall API Connection</h2>
+      <span id="lastSyncLabel" class="pb-sync" style="display:none;margin-left:auto;font-size:13px;font-weight:600;color:var(--g600);white-space:nowrap"></span>
+    </div>
+    <div class="card-bd">
+      <!-- Status bar (shown when connected) -->
+      <!-- Fetch progress widget -->
+      <div id="fetchProgress" style="display:none;margin-bottom:14px;padding:12px 16px;background:#f0f4ff;border:1.5px solid #c5d8f5;border-radius:8px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <div style="width:20px;height:20px;border:2.5px solid #c5d8f5;border-top-color:#1a73e8;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div id="fpLabel" style="font-family:var(--font);font-size:13px;font-weight:600;color:#1557b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Connecting…</div>
+            <div id="fpSub"   style="font-family:var(--font-text);font-size:11.5px;color:#5f6368;margin-top:1px">Please wait</div>
+          </div>
+          <div id="fpPct" style="font-family:var(--font);font-size:19px;font-weight:700;color:#1a73e8;letter-spacing:-.5px;min-width:46px;text-align:right">0%</div>
+        </div>
+        <div style="background:#dde8fb;border-radius:99px;height:5px;overflow:hidden">
+          <div id="fpBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a73e8,#4285f4);border-radius:99px;transition:width .35s ease"></div>
+        </div>
+      </div>
+
+      <!-- Status bar (shown after sync completes) -->
+      <div id="apiStatus" style="display:none;margin-bottom:14px;padding:10px 14px;background:var(--g50);border-left:3px solid var(--blue);border-radius:6px;font-family:var(--font-text);font-size:13px;color:#202124;line-height:1.6"></div>
+
+      <!-- Credentials row (hidden when connected) -->
+      <div id="credentialsSection">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label class="f-label">Account API Key</label>
+            <input type="text" id="inputApiKey" placeholder="28c4b34e-5ab3-4983-..." style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:#fff;color:#111">
+          </div>
+          <div>
+            <label class="f-label">Secret Key / User Key</label>
+            <input type="text" id="inputSecretKey" placeholder="Your user row key" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:#fff;color:#111">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr 190px;gap:14px;align-items:end;margin-bottom:14px">
+          <div>
+            <label class="f-label">Proxy URL</label>
+            <input type="text" id="inputProxy" value="https://matrack-proxy.sayan-sieva.workers.dev" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;outline:none;background:#fff;color:#111">
+          </div>
+          <div>
+            <label class="f-label">🕐 Report Timezone</label>
+            <select id="tzSelect" onchange="applyTimezoneChange()" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:#fff;color:#111"></select>
+          </div>
+          <div>
+            <label class="f-label">Auto-sync interval</label>
+            <select id="syncInterval" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:#fff;color:#111">
+              <option value="0" selected>Manual only</option>
+              <option value="30000">Every 30 sec</option>
+              <option value="60000">Every 1 min</option>
+              <option value="300000">Every 5 min</option>
+              <option value="600000">Every 10 min</option>
+              <option value="900000">Every 15 min</option>
+              <option value="1800000">Every 30 min</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-sm" id="btnTest" onclick="testConnection()" style="white-space:nowrap">🔍 Test Connection</button>
+          <button class="btn-primary" id="btnConnect" onclick="apiConnect()" style="margin-top:0;white-space:nowrap">Connect &amp; Fetch</button>
+          <div id="savedKeysNote" style="display:none;align-items:center;gap:8px;margin-left:4px">
+            <span style="font-family:var(--font-text);font-size:12px;color:#1e8e3e">&#10003; Keys saved on this device</span>
+            <button onclick="clearSavedKeys()" style="font-family:var(--font);font-size:11.5px;background:none;border:1px solid var(--g300);border-radius:4px;padding:2px 9px;cursor:pointer;color:var(--g500)">Clear</button>
+          </div>
+        </div>
+
+        <!-- Test connection log panel -->
+        <div id="testLogWrap" style="display:none;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <span style="font-family:var(--font);font-size:12px;font-weight:600;color:var(--g600);text-transform:uppercase;letter-spacing:.5px">Connection Test Log</span>
+            <button id="btnCopyLog" onclick="copyTestLog()" style="font-family:var(--font);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;padding:3px 11px;background:#fff;border:1.5px solid var(--g300);border-radius:5px;cursor:pointer;color:var(--g700);transition:background .12s">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Log
+            </button>
+          </div>
+          <div id="testLog" style="background:#f8f9fa;border:1px solid var(--g200);border-radius:var(--radius);padding:12px 14px;font-family:var(--font-mono);font-size:12px;color:#202124;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.65"></div>
+        </div>
+
+        <div style="font-family:var(--font-text);font-size:12px;color:var(--g500)">
+          Proxy runs on Cloudflare Workers — no local server needed. Keys: MightyCall → Integrations → API Key for your account.
+        </div>
+      </div>
+
+      <!-- Connected state controls (shown when connected) -->
+      <div id="connectedControls" style="display:none;gap:10px;align-items:center;flex-wrap:wrap">
+        <span id="connectedInfo" style="font-family:var(--font-text);font-size:13px;color:var(--g600)"></span>
+        <span id="tzPill" style="font-family:var(--font);font-size:12px;font-weight:500;background:#e8f0fe;color:#1557b0;border:1px solid #c5d8f5;padding:3px 10px;border-radius:12px">🕐 UTC</span>
+        <select id="syncIntervalConnected" onchange="updateSyncInterval(this.value)" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:#111;outline:none">
+          <option value="0" selected>Manual only</option>
+          <option value="30000">Auto-sync: 30s</option>
+          <option value="60000">Auto-sync: 1 min</option>
+          <option value="300000">Auto-sync: 5 min</option>
+          <option value="600000">Auto-sync: 10 min</option>
+          <option value="900000">Auto-sync: 15 min</option>
+          <option value="1800000">Auto-sync: 30 min</option>
+        </select>
+        <select id="tzSelectConnected" onchange="applyTimezoneChange()" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:#111;outline:none;max-width:220px"></select>
+        <button class="btn-sm" id="btnSync" onclick="apiSync()">🔄 Sync Now</button>
+        <button class="btn-sm" onclick="apiDisconnect()" style="color:var(--red);border-color:var(--red)">Disconnect</button>
+      </div>
+
+      <div class="error-msg" id="apiError"></div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="card">
+    <div class="card-hd">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g600)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <h2>Date &amp; Time Filter</h2>
+    </div>
+    <div class="card-bd">
+
+      <!-- Mode Toggle + Quick Select on same row -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;gap:0;border:1.5px solid var(--g300);border-radius:8px;overflow:hidden;flex-shrink:0">
+          <button id="modeSingle" onclick="setMode('single')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--blue);color:#fff;transition:background .15s">Single Day</button>
+          <button id="modeRange" onclick="setMode('range')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--surface);color:var(--g700);transition:background .15s">Date Range</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">
+          <button class="qs-btn" onclick="applyPreset('1h')">Last 1 Hour</button>
+          <button class="qs-btn" onclick="applyPreset('today')">Today</button>
+          <button class="qs-btn" onclick="applyPreset('yesterday')">Yesterday</button>
+          <button class="qs-btn" onclick="applyPreset('3d')">Last 3 Days</button>
+          <button class="qs-btn" onclick="applyPreset('7d')">Last 7 Days</button>
+          <button class="qs-btn" onclick="applyPreset('15d')">Last 15 Days</button>
+          <button class="qs-btn" onclick="applyPreset('1m')">Last 1 Month</button>
+          <button class="qs-btn" onclick="applyPreset('3m')">Last 3 Months</button>
+        </div>
+      </div>
+
+      <!-- Single day row -->
+      <div id="filterSingle" class="filters-row">
+        <div>
+          <label class="f-label" for="reportDate">Date</label>
+          <input type="date" id="reportDate">
+        </div>
+        <div>
+          <label class="f-label" for="startTime">Start time</label>
+          <input type="time" id="startTime" value="00:00">
+        </div>
+        <div>
+          <label class="f-label" for="endTime">End time</label>
+          <input type="time" id="endTime" value="23:59">
+        </div>
+      </div>
+
+      <!-- Date range row -->
+      <div id="filterRange" class="filters-row" style="display:none">
+        <div>
+          <label class="f-label" for="dateFrom">From date</label>
+          <input type="date" id="dateFrom">
+        </div>
+        <div>
+          <label class="f-label" for="dateTo">To date</label>
+          <input type="date" id="dateTo">
+        </div>
+      </div>
+
+      <!-- Range info banner -->
+      <div id="rangeInfo" style="display:none;margin-top:10px;padding:10px 14px;background:var(--blue-light);border-left:3px solid var(--blue);border-radius:6px;font-family:var(--font-text);font-size:13px;color:var(--blue-dark)">
+        📅 In date range mode, missed calls from each day are checked against <strong>all subsequent days</strong> in the range for callbacks.
+      </div>
+
+      <button class="btn-primary" id="generateBtn" disabled>Generate Report</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div id="loadingSpinner" style="display:none;text-align:center;padding:40px 0 20px">
+      <div style="display:inline-block;width:40px;height:40px;border:4px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px"></div>
+      <div data-msg style="font-family:var(--font);font-size:15px;color:var(--g600)">Processing call data…</div>
+      <div style="font-family:var(--font-text);font-size:13px;color:var(--g500);margin-top:4px">This may take a moment for large date ranges</div>
+    </div>
+    <div class="spinner-wrap" id="spinner"><div class="spinner"></div><div style="font-family:var(--font);font-size:14px">Processing…</div></div>
+    <div class="period-banner" id="periodBanner"><span id="periodBannerText"></span><div id="syncBadge" style="display:none;align-items:center;gap:6px;background:#e6f4ea;border:1px solid #a8d5b5;padding:3px 12px;border-radius:20px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--green);flex-shrink:0"><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.4s infinite"></span><span id="syncBadgeText">LIVE</span></div></div>
+
+    <!-- PDF-only header — sits at very top of print page -->
+    <div class="pdf-header" style="display:none;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #dadce0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:8px;background:#1a73e8;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg>
+        </div>
+        <div>
+          <div style="font-family:var(--font);font-size:18px;font-weight:700;color:#202124">Matrack Missed Call Tracker — Report</div>
+          <div style="font-size:11px;color:#80868b;font-family:var(--font-text);margin-top:2px" id="pdfSubtitle"></div>
+        </div>
+        <div style="margin-left:auto;font-size:11px;color:#80868b;font-family:var(--font-mono)" id="pdfGenerated"></div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="statsRow" style="display:none">
+      <div class="stat indigo"><div class="s-lbl">Total Inbound Calls</div><div class="s-val" id="sTotalInbound">0</div></div>
+      <div class="stat teal"><div class="s-lbl">Total Outbound Calls</div><div class="s-val" id="sTotalOutbound">0</div></div>
+      <div class="stat blue"><div class="s-lbl">Inbound Connected</div><div class="s-val" id="sConnected">0</div></div>
+      <div class="stat amber"><div class="s-lbl">Total Missed Contacts</div><div class="s-val" id="sTotalMissed">0</div></div>
+      <div class="stat green"><div class="s-lbl">Missed Call Follow-up Done ✓</div><div class="s-val" id="sCalledBack">0</div></div>
+      <div class="stat red"><div class="s-lbl">Needs Follow-up</div><div class="s-val" id="sFollowup">0</div></div>
+    </div>
+
+    <!-- Analysis card — page 1 portion (up to Called Back Missed Calls) -->
+    <div class="analysis-card" id="analysisCard">
+      <div class="analysis-hd">
+        <span>📋 Analysis Summary</span>
+        <div class="analysis-actions">
+          <button class="btn-pdf" id="btnPdf" onclick="exportPdf()">⬇ Export PDF</button>
+          <button class="btn-sm" id="btnDownload">⬇ Download .txt</button>
+          <button class="btn-sm" id="btnCopy">Copy</button>
+        </div>
+      </div>
+      <div class="analysis-body" id="analysisBody"></div>
+    </div>
+
+    <!-- PDF page 1: follow-up table -->
+    <div class="tbl-card" id="fuCard">
+      <div class="tbl-hd"><h3>Numbers Requiring Follow-up</h3><span class="badge red" id="fuBadge">0</span></div>
+      <div style="overflow-x:auto">
+        <table><thead><tr><th>Contact Number</th><th>Missed Calls</th><th>Last Missed Call &amp; Date</th><th>Call Types</th><th>Participants</th><th>Business Line</th></tr></thead>
+        <tbody id="fuBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Agent Analysis Table -->
+    <div class="tbl-card" id="agentCard">
+      <div class="tbl-hd" style="flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <h3>Agent Call Handling Analysis</h3>
+          <span class="badge blue" id="agentBadge">0 agents</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-sm" id="btnAgentCopy" onclick="copyAgentTable()">📋 Copy Table</button>
+          <button class="btn-pdf" onclick="exportAgentPdf('landscape')">⬇ Export PDF</button>
+          <button class="btn-sm" onclick="exportAgentImage()">🖼 Export Image</button>
+        </div>
+      </div>
+      <!-- Hidden title row shown only in exports -->
+      <div id="agentExportHeader" style="display:none;padding:14px 20px 8px;font-family:var(--font);font-size:15px;font-weight:600;color:var(--g800);border-bottom:1px solid var(--g200)">
+        Agent Call Handling Analysis · <span id="agentExportDate"></span>
+      </div>
+      <div style="overflow-x:auto;padding-right:2px">
+        <table id="agentTable">
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th class="th-highlight" style="text-align:right">Total Calls</th>
+              <th style="text-align:right">Inbound</th>
+              <th style="text-align:right">Outbound</th>
+              <th style="text-align:right">Missed</th>
+              <th class="th-highlight" style="text-align:right">Total Talk Time</th>
+              <th style="text-align:right">Inbound Talk Time</th>
+              <th style="text-align:right">Outbound Talk Time</th>
+              <th class="th-highlight" style="text-align:right">Overall AHT</th>
+              <th style="text-align:right">Inbound AHT</th>
+              <th style="text-align:right">Outbound AHT</th>
+            </tr>
+          </thead>
+          <tbody id="agentBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PDF page break before Called Back section -->
+    <div class="pdf-page-break"></div>
+
+    <!-- Called Back Missed Calls table -->
+    <div class="tbl-card" id="calledBackCard" style="display:none">
+      <div class="tbl-hd">
+        <h3>📞 Called Back Missed Calls</h3>
+        <span class="badge green" id="calledBackBadge">0</span>
+        <div style="margin-left:auto">
+          <button class="btn-pdf" onclick="exportCalledBackPdf()">⬇ Export PDF</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="calledBackTable">
+          <thead><tr>
+            <th>Contact Number</th>
+            <th>Missed Calls</th>
+            <th>Last Missed Call &amp; Date</th>
+            <th>Follow-up Time &amp; Date</th>
+            <th>Call Types</th>
+            <th>Follow-up Status</th>
+            <th>Agent</th>
+          </tr></thead>
+          <tbody id="calledBackBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tbl-card" id="cbCard">
+      <div class="tbl-hd" style="flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <h3>Call Logs for the Selected Date and Times</h3>
+          <span class="badge blue" id="cbBadge">0 calls</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-pdf" onclick="exportCallLogPdf()">⬇ Export PDF</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="cbTable">
+          <thead><tr>
+            <th>Date &amp; Time</th>
+            <th>Direction</th>
+            <th>Contact Number</th>
+            <th>Business Line</th>
+            <th>Result</th>
+            <th>Duration</th>
+            <th>Agent / Owner</th>
+          </tr></thead>
+          <tbody id="cbBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PDF page 2: called back analysis text — moved to last -->
+    <div class="analysis-card" id="analysisCardCB" style="display:none">
+      <div class="analysis-hd">
+        <span>📞 Called Back Missed Calls</span>
+      </div>
+      <div class="analysis-body" id="analysisBodyCB"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+// API CONFIG & STATE
+// ═══════════════════════════════════════════════════════
+let apiCFG = { apiKey:'', secretKey:'', proxy:'https://matrack-proxy.sayan-sieva.workers.dev' };
+
+// ── Saved credentials ──────────────────────────────────
+// Uses localStorage (persists across sessions) with sessionStorage fallback
+// for file:// URLs where localStorage may be blocked.
+const STORAGE_KEY = 'matrack_mc_creds';
+let _memCreds = null; // last-resort in-memory fallback
+
+function saveCredentials(apiKey, secretKey, proxy) {
+  const data = JSON.stringify({ apiKey, secretKey, proxy });
+  _memCreds = { apiKey, secretKey, proxy };
+  try { localStorage.setItem(STORAGE_KEY, data); return; } catch(e) {}
+  try { sessionStorage.setItem(STORAGE_KEY, data); } catch(e) {}
+}
+
+function loadCredentials() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return _memCreds;
+}
+
+function clearSavedKeys() {
+  _memCreds = null;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  document.getElementById('inputApiKey').value    = '';
+  document.getElementById('inputSecretKey').value = '';
+  document.getElementById('inputProxy').value     = 'https://matrack-proxy.sayan-sieva.workers.dev';
+  document.getElementById('savedKeysNote').style.display = 'none';
+  toast('Saved keys cleared.', 'info');
+}
+
+function toast(msg, type) {
+  // Simple inline toast using apiError element
+  const el = document.getElementById('apiError');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'info' ? '#e8f0fe' : '#fce8e6';
+  el.style.color      = type === 'info' ? '#1557b0'  : '#c5221f';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// Auto-load saved credentials when page opens
+(function loadSavedCredsOnStart() {
+  const saved = loadCredentials();
+  // Use saved creds if they exist, otherwise fall back to Matrack defaults
+  const apiKey    = (saved && saved.apiKey)    ? saved.apiKey    : '28c4b34e-5ab3-4983-b24d-b7ba8d08e31c';
+  const secretKey = (saved && saved.secretKey) ? saved.secretKey : '7fc8f14e44af';
+  const proxy     = (saved && saved.proxy)     ? saved.proxy     : 'https://matrack-proxy.sayan-sieva.workers.dev';
+  document.getElementById('inputApiKey').value    = apiKey;
+  document.getElementById('inputSecretKey').value = secretKey;
+  document.getElementById('inputProxy').value     = proxy;
+  const note = document.getElementById('savedKeysNote');
+  if (note) note.style.display = 'flex';
+})();
+let csvData = [];          // normalised call rows — same shape as CSV tool
+// csvTimezone is used throughout the inherited report functions for banner/PDF/analysis text
+// We make it a live getter so it always reflects the currently selected timezone
+Object.defineProperty(window, 'csvTimezone', {
+  get: () => {
+    const match = TZ_LIST.find(([tz]) => tz === selectedTZ);
+    const label = match ? match[1] : selectedTZ;
+    const offset = liveOffset(selectedTZ);
+    return offset ? `${label}  (${offset})` : label;
+  },
+  configurable: true
+});
+let syncTimer = null;
+let isConnected = false;
+let currentMode = 'single';
+
+// ═══════════════════════════════════════════════════════
+// PROXY FETCH (identical auth to main dashboard)
+// ═══════════════════════════════════════════════════════
+async function proxyFetch(path, params = {}) {
+  const url = new URL(apiCFG.proxy + '/api' + path);
+  Object.entries(params).forEach(([k,v]) => { if(v!==undefined&&v!=='') url.searchParams.set(k,v); });
+  const res = await fetch(url.toString(), {
+    headers: { 'Accept':'application/json', 'x-api-key': apiCFG.apiKey, 'x-secret-key': apiCFG.secretKey }
+  });
+  if (!res.ok) { const t = await res.text().catch(()=>''); throw new Error(`HTTP ${res.status}: ${t.substring(0,120)}`); }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════
+// FETCH ALL CALLS (paginated, up to daysBack)
+// ═══════════════════════════════════════════════════════
+function getDateRange() {
+  const isRange = currentMode === 'range';
+
+  // Convert a local date+time string in selectedTZ to a UTC string for the API
+  function toUtcStr(localDateStr, localTimeStr) {
+    // localDateStr: "YYYY-MM-DD", localTimeStr: "HH:MM"
+    // We need to find the UTC equivalent of midnight (or given time) in selectedTZ
+    try {
+      const [y, mo, d]   = localDateStr.split('-').map(Number);
+      const [hh, mm]     = localTimeStr.split(':').map(Number);
+      const ss           = 0;
+      // Build an ISO string with timezone offset for the selected TZ
+      // Use Intl to get the UTC offset at that moment
+      const tempDate = new Date(Date.UTC(y, mo-1, d, hh, mm, ss));
+      // Get the offset: format the temp date in selectedTZ and compare to UTC
+      const fmtUTC = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC',
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
+      }).format(tempDate);
+      const fmtTZ = new Intl.DateTimeFormat('en-US', {
+        timeZone: selectedTZ,
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
+      }).format(tempDate);
+      // Parse both back to get offset in ms
+      const parseFormatted = s => {
+        const m = s.match(/(\d+)\/(\d+)\/(\d+),\s*(\d+):(\d+):(\d+)/);
+        if (!m) return null;
+        return Date.UTC(+m[3], +m[1]-1, +m[2], +m[4], +m[5], +m[6]);
+      };
+      const utcMs = parseFormatted(fmtUTC);
+      const tzMs  = parseFormatted(fmtTZ);
+      if (utcMs === null || tzMs === null) throw new Error('parse failed');
+      const offsetMs = tzMs - utcMs; // TZ is ahead of UTC by this much
+      // The actual UTC time = local time - offset
+      const actualUtcMs = tempDate.getTime() - offsetMs;
+      const utcDate = new Date(actualUtcMs);
+      const pad = n => String(n).padStart(2,'0');
+      return `${utcDate.getUTCFullYear()}-${pad(utcDate.getUTCMonth()+1)}-${pad(utcDate.getUTCDate())} ${pad(utcDate.getUTCHours())}:${pad(utcDate.getUTCMinutes())}:${pad(utcDate.getUTCSeconds())}`;
+    } catch(e) {
+      // Fallback: treat as UTC
+      return `${localDateStr} ${localTimeStr}:00`;
+    }
+  }
+
+  let startUtc, endUtc;
+  if (isRange) {
+    const df = document.getElementById('dateFrom').value;
+    const dt = document.getElementById('dateTo').value;
+    startUtc = df ? toUtcStr(df, '00:00') : toUtcStr(todayInTZ(selectedTZ), '00:00');
+    endUtc   = dt ? toUtcStr(dt, '23:59') : toUtcStr(todayInTZ(selectedTZ), '23:59');
+    endUtc   = endUtc.replace(/:00$/, ':59');
+  } else {
+    const d  = document.getElementById('reportDate').value || todayInTZ(selectedTZ);
+    // Always fetch the FULL day (00:00 to 23:59) regardless of time filter.
+    // The time filter controls which missed calls to flag, not what data to fetch.
+    // This ensures callbacks made after the end-time window are still visible
+    // and correctly clear their corresponding missed calls.
+    startUtc = toUtcStr(d, '00:00');
+    endUtc   = toUtcStr(d, '23:59');
+    endUtc   = endUtc.replace(/:00$/, ':59');
+  }
+  return { startUtc, endUtc };
+}
+
+// ── Fetch progress helpers ─────────────────────────────
+function showFP(label, sub, pct) {
+  document.getElementById('fetchProgress').style.display = 'block';
+  document.getElementById('apiStatus').style.display     = 'none';
+  document.getElementById('fpLabel').textContent = label;
+  document.getElementById('fpSub').textContent   = sub;
+  const p = Math.min(100, Math.max(0, Math.round(pct)));
+  document.getElementById('fpPct').textContent   = p + '%';
+  document.getElementById('fpBar').style.width   = p + '%';
+}
+function hideFP() {
+  document.getElementById('fetchProgress').style.display = 'none';
+}
+
+// ── UTC helpers for week-chunked fetching ─────────────
+function _addDays(utcStr, days) {
+  const d = new Date(utcStr.replace(' ','T')+'Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+}
+function _subSec(utcStr) {
+  const d = new Date(utcStr.replace(' ','T')+'Z');
+  d.setUTCSeconds(d.getUTCSeconds() - 1);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+}
+
+async function fetchAllCalls() {
+  const { startUtc, endUtc } = getDateRange();
+
+  // Split into 7-day chunks to avoid MightyCall's server-side skip limit (~9000 rows)
+  const CHUNK = 7;
+  const chunks = [];
+  let cs = startUtc;
+  while (cs < endUtc) {
+    const rawEnd  = _addDays(cs, CHUNK);
+    const ce      = rawEnd >= endUtc ? endUtc : _subSec(rawEnd);
+    chunks.push({ start: cs, end: ce });
+    cs = rawEnd >= endUtc ? endUtc : rawEnd;
+    if (cs >= endUtc) break;
+  }
+
+  let all = [], done = 0;
+  showFP(`Fetching week 1 of ${chunks.length}…`, 'Contacting MightyCall API', 2);
+
+  for (const chunk of chunks) {
+    // Paginate within this chunk (skip stays small, no API limit hit)
+    let skip = 0, pageSize = 500;
+    const first = await proxyFetch('/calls', { startUtc: chunk.start, endUtc: chunk.end, pageSize, skip });
+    const total = first?.data?.total || 0;
+    const firstItems = first?.data?.calls || [];
+    all = all.concat(firstItems);
+    skip += firstItems.length;
+    while (skip < total && firstItems.length > 0) {
+      const resp = await proxyFetch('/calls', { startUtc: chunk.start, endUtc: chunk.end, pageSize, skip });
+      const items = resp?.data?.calls || [];
+      if (!items.length) break;
+      all = all.concat(items);
+      skip += items.length;
+    }
+    done++;
+    const pct = Math.round((done / chunks.length) * 70) + 2;
+    showFP(
+      `Fetching week ${done} of ${chunks.length}…`,
+      `${all.length.toLocaleString()} calls retrieved`,
+      pct
+    );
+    // Yield so browser can update the UI between chunks
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  // Deduplicate by call ID
+  const seen = new Set();
+  return all.filter(c => {
+    const id = c.id || c.requestGuid;
+    if (!id) return true;
+    if (seen.has(id)) return false;
+    seen.add(id); return true;
+  });
+}
+
+// ── Option B: TZ offset cache — calculated once per hour-bucket, not per call ──
+const _normTZCache = {};
+function _getTZOffset(tz, utcMs) {
+  const key = tz + '_' + Math.floor(utcMs / 3600000); // 1-hour bucket
+  if (_normTZCache[key] !== undefined) return _normTZCache[key];
+  try {
+    const d = new Date(utcMs);
+    const fmt = { hour12:false, year:'numeric', month:'2-digit', day:'2-digit',
+                  hour:'2-digit', minute:'2-digit', second:'2-digit' };
+    const utcStr = d.toLocaleString('en-US', { ...fmt, timeZone:'UTC' });
+    const tzStr  = d.toLocaleString('en-US', { ...fmt, timeZone: tz });
+    const parse  = s => { const m=s.match(/(\d+)\/(\d+)\/(\d+),?\s*(\d+):(\d+):(\d+)/); return m?Date.UTC(+m[3],+m[1]-1,+m[2],+m[4],+m[5],+m[6]):utcMs; };
+    _normTZCache[key] = parse(tzStr) - parse(utcStr);
+  } catch(e) { _normTZCache[key] = 0; }
+  return _normTZCache[key];
+}
+
+function _utcToLocalStr(utcMs, tz) {
+  // Fast path: apply cached offset, format using UTC methods (no Intl per call)
+  const localMs = utcMs + _getTZOffset(tz, utcMs);
+  const d = new Date(localMs);
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getUTCMonth()+1)}/${p(d.getUTCDate())}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+}
+
+// ── Option A: batched async normalise — yields every 500 calls ──────────────
+async function normaliseCalls(apiCalls) {
+  const BATCH = 500;
+  const result = [];
+  const total  = apiCalls.length;
+  const cleanPhone = p => '+' + String(p).replace(/\D/g,'');
+  const isExternal = p => p && String(p).replace(/\D/g,'').length >= 10;
+
+  for (let i = 0; i < total; i += BATCH) {
+    const batch = apiCalls.slice(i, i + BATCH);
+
+    for (const c of batch) {
+      const dir = (c.direction||'').toLowerCase();
+      const Direction = (dir==='incoming'||dir==='inbound') ? 'Incoming' : 'Outgoing';
+
+      const st = (c.callStatus||'').toLowerCase().replace(/\s/g,'');
+      let Result;
+      if      (st==='connected')                                     Result='Connected';
+      else if (st==='missed')                                        Result='Missed';
+      else if (st==='voicemail')                                     Result='VoiceMail';
+      else if (st==='dropped')                                       Result='Dropped';
+      else if (st==='canceled'||st==='cancelled')                    Result='Canceled';
+      else if (st==='noanswer'||st==='no_answer'||st==='notanswered'||st==='busy') Result='Missed';
+      else                                                           Result=c.callStatus||'Unknown';
+
+      let ContactNumber = '';
+      if (Direction === 'Incoming') {
+        if (c.caller?.phone && isExternal(c.caller.phone))           ContactNumber = cleanPhone(c.caller.phone);
+        else if (c.caller?.name && isExternal(c.caller.name.replace(/\D/g,''))) ContactNumber = cleanPhone(c.caller.name);
+        else if (c.called?.length) { const e=c.called.find(p=>p.phone&&isExternal(p.phone)); if(e) ContactNumber=cleanPhone(e.phone); }
+        if (!ContactNumber && c.caller?.extension && isExternal(c.caller.extension)) ContactNumber = cleanPhone(c.caller.extension);
+      } else {
+        const ext = (c.called||[]).find(p=>p.phone&&isExternal(p.phone));
+        if (ext) ContactNumber = cleanPhone(ext.phone);
+        else { const any=(c.called||[]).find(p=>p.phone); if(any) ContactNumber=cleanPhone(any.phone); }
+      }
+      // Last resort for INCOMING only — caller.phone is the customer
+      if (!ContactNumber && Direction === 'Incoming' && c.caller?.phone)
+        ContactNumber = cleanPhone(c.caller.phone);
+
+      let Owner = '';
+      if (Direction === 'Outgoing') {
+        Owner = c.caller?.name || c.caller?.extension || '';
+      } else {
+        const conn = (c.called||[]).find(x=>x.isConnected);
+        if (conn) Owner = conn.name || conn.extension || '';
+      }
+      if (Owner && /^\+?\d{7,}$/.test(Owner.replace(/\s/g,''))) Owner = '';
+
+      // B: skip Participants (heavy join, not needed for analysis)
+      const Participants      = '';
+      const BusinessNumberLabel = c.businessNumber || '';
+      const durMs             = parseInt(c.duration||0);
+      const TotalSeconds      = String(durMs > 1000 ? Math.round(durMs/1000) : durMs);
+
+      // B: fast cached TZ conversion — no new Intl per call
+      let CallStartTime = '';
+      if (c.dateTimeUtc) {
+        const d = new Date(c.dateTimeUtc);
+        if (!isNaN(d)) CallStartTime = _utcToLocalStr(d.getTime(), selectedTZ);
+      }
+
+      if (!CallStartTime || !ContactNumber) continue;
+
+      const o = { Direction, Result, ContactNumber, Owner, Participants,
+                  BusinessNumberLabel, TotalSeconds, CallStartTime };
+      o._dtObj = parseDT(CallStartTime) || null;
+      o._uid   = c.id || Math.random().toString(36);
+      result.push(o);
+    }
+
+    // A: yield to browser between every batch of 500
+    const pctDone = Math.round(((i + BATCH) / total) * 12) + 75;
+    showFP('Processing calls…',
+      `${Math.min(i+BATCH, total).toLocaleString()} / ${total.toLocaleString()} records`,
+      Math.min(pctDone, 87));
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════
+// CONNECT
+// ═══════════════════════════════════════════════════════
+async function apiConnect() {
+  const key    = document.getElementById('inputApiKey').value.trim();
+  const secret = document.getElementById('inputSecretKey').value.trim();
+  const proxy  = document.getElementById('inputProxy').value.trim();
+  if (!key || !secret) { showApiErr('Enter both Account API Key and Secret Key.'); return; }
+
+  apiCFG = { apiKey: key, secretKey: secret, proxy: proxy || 'https://matrack-proxy.sayan-sieva.workers.dev' };
+
+  // Save to localStorage so they auto-fill next time
+  saveCredentials(key, secret, proxy || 'https://matrack-proxy.sayan-sieva.workers.dev');
+  const note = document.getElementById('savedKeysNote');
+  if (note) note.style.display = 'flex';
+
+  document.getElementById('btnConnect').textContent = 'Connecting…';
+  document.getElementById('btnConnect').disabled = true;
+
+  try {
+    const ping = await proxyFetch('/ping');
+    if (!ping?.isSuccess && ping?.data === undefined) throw new Error('Ping failed');
+  } catch(e) {
+    showApiErr('Cannot reach proxy: ' + e.message + '. Check that the Cloudflare Worker is deployed.');
+    document.getElementById('btnConnect').textContent = 'Connect & Fetch';
+    document.getElementById('btnConnect').disabled = false;
+    return;
+  }
+
+  isConnected = true;
+  showConnectedState();
+  await apiSync();
+
+  const interval = parseInt(document.getElementById('syncInterval').value);
+  startAutoSync(interval);
+}
+
+function showConnectedState() {
+  document.getElementById('credentialsSection').style.display = 'none';
+  document.getElementById('connectedControls').style.display  = 'flex';
+  document.getElementById('syncBadge').style.display          = 'flex';
+  const interval = parseInt(document.getElementById('syncInterval').value);
+  document.getElementById('syncIntervalConnected').value = interval;
+  document.getElementById('connectedInfo').textContent = `Connected · ${apiCFG.proxy}`;
+}
+
+function apiDisconnect() {
+  isConnected = false;
+  clearInterval(syncTimer); syncTimer = null;
+  csvData = [];
+  document.getElementById('credentialsSection').style.display = 'block';
+  document.getElementById('connectedControls').style.display  = 'none';
+  document.getElementById('syncBadge').style.display          = 'none';
+  document.getElementById('lastSyncLabel').style.display       = 'none';
+  document.getElementById('lastSyncLabel').textContent         = '';
+  document.getElementById('btnConnect').textContent = 'Connect & Fetch';
+  document.getElementById('btnConnect').disabled = false;
+  document.getElementById('apiStatus').style.display = 'none';
+  document.getElementById('statsRow').style.display = 'none';
+  document.getElementById('analysisCard').style.display = 'none';
+  document.getElementById('fuCard').style.display = 'none';
+  document.getElementById('agentCard').style.display = 'none';
+  document.getElementById('cbCard').style.display = 'none';
+  document.getElementById('calledBackCard').style.display = 'none';
+  document.getElementById('analysisCardCB').style.display = 'none';
+  document.getElementById('periodBanner').style.display = 'none';
+  document.getElementById('generateBtn').disabled = true;
+}
+
+// ═══════════════════════════════════════════════════════
+// SYNC — fetch → normalise → store → auto-generate report
+// ═══════════════════════════════════════════════════════
+async function apiSync() {
+  const btn = document.getElementById('btnSync');
+  btn.textContent = '⏳ Syncing…'; btn.disabled = true;
+  hideApiErr();
+
+  try {
+    showFP('Connecting to MightyCall…', 'Authenticating via proxy', 2);
+    const raw = await fetchAllCalls();
+
+    showFP('Processing calls…', `Normalising ${raw.length.toLocaleString()} records`, 75);
+    await new Promise(r => setTimeout(r, 0));
+    csvData = await normaliseCalls(raw);
+
+    showFP('Sorting records…', 'Ordering by timestamp', 88);
+    await new Promise(r => setTimeout(r, 0));
+    csvData.sort((a,b) => (a._dtObj||0) - (b._dtObj||0));
+
+    showFP('Done!', `${csvData.length.toLocaleString()} calls loaded`, 100);
+    await new Promise(r => setTimeout(r, 700));
+    hideFP();
+
+    const now = new Date();
+    const ts  = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('lastSyncLabel').textContent = `Last sync: ${ts}`;
+    document.getElementById('lastSyncLabel').style.display = 'block';
+    document.getElementById('syncBadgeText').textContent = 'LIVE · ' + ts;
+    document.getElementById('syncBadge').style.display = 'flex';
+
+    const { startUtc, endUtc } = getDateRange();
+    const match = TZ_LIST.find(([tz])=>tz===selectedTZ);
+    const tzLabel = match ? `${match[1]}  (${liveOffset(selectedTZ)})` : selectedTZ;
+    const statusEl = document.getElementById('apiStatus');
+    statusEl.style.display = 'block';
+    statusEl.textContent   = `✓ ${csvData.length.toLocaleString()} calls fetched · ${startUtc.substring(0,10)} to ${endUtc.substring(0,10)} · Times shown in: ${tzLabel} · Synced at ${ts}`;
+
+    document.getElementById('generateBtn').disabled = (csvData.length === 0);
+    if (csvData.length > 0) { runBuildReport(); }
+  } catch(e) {
+    hideFP();
+    showApiErr('Sync failed: ' + e.message);
+  } finally {
+    btn.textContent = '🔄 Sync Now'; btn.disabled = false;
+  }
+}
+
+function updateSyncInterval(val) {
+  clearInterval(syncTimer); syncTimer = null;
+  startAutoSync(parseInt(val));
+}
+
+function startAutoSync(ms) {
+  clearInterval(syncTimer); syncTimer = null;
+  if (ms > 0) syncTimer = setInterval(() => { if(isConnected) apiSync(); }, ms);
+}
+
+function showApiErr(msg) { const e=document.getElementById('apiError'); e.textContent=msg; e.style.display='block'; setTimeout(()=>e.style.display='none',6000); }
+function hideApiErr()    { document.getElementById('apiError').style.display='none'; }
+
+// ── Timezone selector — populated on load, auto-detects browser TZ ───────────
+// TZ_LIST — US, Canada, India, UTC only
+// DST is handled automatically by the browser's Intl.DateTimeFormat engine.
+// Labels show short name only; current UTC offset is calculated live in buildTZSelects.
+const TZ_LIST = [
+  ['America/Los_Angeles', 'US Pacific (PT)'],
+  ['America/Denver',      'US Mountain (MT)'],
+  ['America/Phoenix',     'US Mountain (MST) — No DST'],
+  ['America/Chicago',     'US Central (CT)'],
+  ['America/New_York',    'US Eastern (ET)'],
+  ['America/Anchorage',   'US Alaska (AKT)'],
+  ['Pacific/Honolulu',    'US Hawaii (HST) — No DST'],
+  ['America/Vancouver',   'Canada Pacific (PT)'],
+  ['America/Edmonton',    'Canada Mountain (MT)'],
+  ['America/Winnipeg',    'Canada Central (CT)'],
+  ['America/Toronto',     'Canada Eastern (ET)'],
+  ['America/Halifax',     'Canada Atlantic (AT)'],
+  ['America/St_Johns',    'Canada Newfoundland (NT)'],
+  ['Asia/Kolkata',        'India (IST)'],
+  ['UTC',                 'UTC'],
+];
+
+// Get live UTC offset string for a timezone, e.g. "UTC−8" or "UTC+5:30"
+function liveOffset(tz) {
+  if (tz === 'UTC') return 'UTC+0';
+  try {
+    const now = new Date();
+    // Format a date in the target TZ and in UTC, diff the hours
+    const tzDate  = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+    const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const diffMin = Math.round((tzDate - utcDate) / 60000);
+    const sign    = diffMin >= 0 ? '+' : '−';
+    const absMin  = Math.abs(diffMin);
+    const h       = Math.floor(absMin / 60);
+    const m       = absMin % 60;
+    return m === 0 ? `UTC${sign}${h}` : `UTC${sign}${h}:${String(m).padStart(2,'0')}`;
+  } catch(e) { return ''; }
+}
+
+let selectedTZ = 'America/Los_Angeles'; // default: US Pacific
+
+function buildTZSelects() {
+  const makeOptions = () => TZ_LIST.map(([tz, label]) => {
+    const offset = liveOffset(tz);
+    const display = offset ? `${label}  (${offset})` : label;
+    return `<option value="${tz}"${tz === selectedTZ ? ' selected' : ''}>${display}</option>`;
+  }).join('');
+
+  const s1 = document.getElementById('tzSelect');
+  const s2 = document.getElementById('tzSelectConnected');
+  if (s1) s1.innerHTML = makeOptions();
+  if (s2) s2.innerHTML = makeOptions();
+  updateTZPill();
+  startClock();
+}
+
+// Build on load
+document.addEventListener('DOMContentLoaded', buildTZSelects);
+// Fallback if DOMContentLoaded already fired
+if (document.readyState !== 'loading') buildTZSelects();
+
+function applyTimezoneChange() {
+  const s1 = document.getElementById('tzSelect');
+  const s2 = document.getElementById('tzSelectConnected');
+  const src = document.activeElement === s2 ? s2 : s1;
+  selectedTZ = src?.value || 'America/Los_Angeles';
+  if (s1 && s1 !== src) s1.value = selectedTZ;
+  if (s2 && s2 !== src) s2.value = selectedTZ;
+  updateTZPill();
+  startClock();
+  // Clear cached TZ offsets so next normalise uses the new timezone
+  Object.keys(_normTZCache).forEach(k => delete _normTZCache[k]);
+  // Update date pickers to today in the newly selected timezone
+  const today = todayInTZ(selectedTZ);
+  if (reportDateEl) reportDateEl.value = today;
+  if (dateFromEl)   dateFromEl.value   = today;
+  if (dateToEl)     dateToEl.value     = today;
+  // Re-run report with new timezone if data exists
+  if (csvData.length > 0) runBuildReport();
+}
+
+function updateTZPill() {
+  const pill = document.getElementById('tzPill');
+  if (!pill) return;
+  const match = TZ_LIST.find(([tz]) => tz === selectedTZ);
+  const label = match ? match[1] : selectedTZ;
+  const offset = liveOffset(selectedTZ);
+  pill.textContent = '🕐 ' + label + (offset ? '  ' + offset : '');
+}
+
+// Convert a UTC date object to the selected timezone for display
+function fmtInTZ(utcDate) {
+  if (!utcDate || isNaN(utcDate)) return 'N/A';
+  try {
+    return utcDate.toLocaleString('en-US', {
+      timeZone: selectedTZ,
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  } catch(e) { return utcDate.toUTCString(); }
+}
+
+// ── Live clock — ticks every second, uses selectedTZ ────────────────────────
+let clockInterval = null;
+
+function tickClock() {
+  const now = new Date();
+  try {
+    const timeStr = now.toLocaleTimeString('en-US', {
+      timeZone: selectedTZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    const dateStr = now.toLocaleDateString('en-US', {
+      timeZone: selectedTZ, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+    });
+    const match = TZ_LIST.find(([tz]) => tz === selectedTZ);
+    const tzLabel = match ? `${match[1]}  (${liveOffset(selectedTZ)})` : selectedTZ;
+    const el1 = document.getElementById('clockTime');
+    const el2 = document.getElementById('clockDate');
+    const el3 = document.getElementById('clockTZ');
+    if (el1) el1.textContent = timeStr;
+    if (el2) el2.textContent = dateStr;
+    if (el3) el3.textContent = tzLabel;
+  } catch(e) { /* timezone not yet ready */ }
+}
+
+function startClock() {
+  tickClock();
+  if (clockInterval) clearInterval(clockInterval);
+  clockInterval = setInterval(tickClock, 1000);
+}
+
+
+// ── Test connection with detailed log ─────────────────
+async function testConnection() {
+  const key    = document.getElementById('inputApiKey').value.trim();
+  const secret = document.getElementById('inputSecretKey').value.trim();
+  const proxy  = document.getElementById('inputProxy').value.trim() || 'https://matrack-proxy.sayan-sieva.workers.dev';
+  if (!key || !secret) { showApiErr('Enter both keys before testing.'); return; }
+
+  // Temporarily set so proxyFetch works
+  apiCFG = { apiKey: key, secretKey: secret, proxy };
+
+  const wrap = document.getElementById('testLogWrap');
+  const log  = document.getElementById('testLog');
+  const btn  = document.getElementById('btnTest');
+  wrap.style.display = 'block';
+  log.textContent = '';
+  btn.textContent = '⏳ Testing…';
+  btn.disabled = true;
+
+  const ts = () => new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const append = (line) => { log.textContent += line + '\n'; log.scrollTop = log.scrollHeight; };
+
+  append(`[${ts()}] ── Connection Test Started ──`);
+  append(`[${ts()}] Proxy URL  : ${proxy}`);
+  append(`[${ts()}] API Key    : ${key.substring(0,8)}…${key.substring(key.length-4)}`);
+  append(`[${ts()}] Secret Key : ${'•'.repeat(Math.min(secret.length, 12))}`);
+  const tzMatch = TZ_LIST.find(([tz])=>tz===selectedTZ);
+  const tzLabel = tzMatch ? `${tzMatch[1]}  (${liveOffset(selectedTZ)})` : selectedTZ;
+  append(`[${ts()}] Timezone   : ${tzLabel}`);
+  append('');
+
+  // 1. Ping
+  try {
+    append(`[${ts()}] GET /ping …`);
+    const p = await proxyFetch('/ping');
+    append(`[${ts()}] ✓ /ping OK — response: ${JSON.stringify(p)}`);
+  } catch(e) {
+    append(`[${ts()}] ✗ /ping FAILED — ${e.message}`);
+    append(`[${ts()}] → Check that the Cloudflare Worker is deployed at the proxy URL above.`);
+    btn.textContent = '🔍 Test'; btn.disabled = false; return;
+  }
+
+  // 2. Team
+  try {
+    append(`[${ts()}] GET /team …`);
+    const t = await proxyFetch('/team');
+    const users = t?.data?.users || t?.users || [];
+    append(`[${ts()}] ✓ /team OK — ${users.length} users found`);
+    if (users.length) append(`[${ts()}]   Users: ${users.map(u=>u.fullName||u.id).slice(0,5).join(', ')}`);
+  } catch(e) {
+    append(`[${ts()}] ✗ /team FAILED — ${e.message}`);
+    append(`[${ts()}] → Check that both API Key and Secret Key are correct.`);
+  }
+
+  // 3. Calls (today, 3 records)
+  try {
+    append(`[${ts()}] GET /calls (today in ${selectedTZ}, 3 records) …`);
+    const today = todayInTZ(selectedTZ);
+    const { startUtc, endUtc } = getDateRange();
+    append(`[${ts()}]   Date picker: ${today} → UTC range: ${startUtc} to ${endUtc}`);
+    const r = await proxyFetch('/calls', { startUtc: today+' 00:00:00', endUtc: today+' 23:59:59', pageSize: 3 });
+    const total = r?.data?.total ?? '?';
+    const items = r?.data?.calls || [];
+    append(`[${ts()}] ✓ /calls OK — total today: ${total}, returned: ${items.length}`);
+    if (items.length) {
+      append(`[${ts()}]   Sample call: ${items[0].direction} | ${items[0].callStatus} | ${items[0].dateTimeUtc}`);
+      append(`[${ts()}]   → This UTC time will be converted to: ${fmtInTZ(new Date(items[0].dateTimeUtc))} (${tzLabel})`);
+      // Show all unique callStatus values found — useful for debugging
+      const r5 = await proxyFetch('/calls', { startUtc: today+' 00:00:00', endUtc: today+' 23:59:59', pageSize: 100 });
+      const allStatuses = [...new Set((r5?.data?.calls||[]).map(c=>c.callStatus))].filter(Boolean);
+      append(`[${ts()}]   Unique callStatus values seen today: ${allStatuses.join(', ') || 'none'}`);
+      // Show raw structure of first Missed call — critical for ContactNumber debugging
+      const missedCall = (r5?.data?.calls||[]).find(c=>c.callStatus==='Missed');
+      if (missedCall) {
+        append(`[${ts()}]   --- Raw Missed call structure ---`);
+        append(`[${ts()}]   direction: ${missedCall.direction}`);
+        append(`[${ts()}]   callStatus: ${missedCall.callStatus}`);
+        append(`[${ts()}]   caller: ${JSON.stringify(missedCall.caller)}`);
+        append(`[${ts()}]   called: ${JSON.stringify(missedCall.called)}`);
+        append(`[${ts()}]   businessNumber: ${missedCall.businessNumber}`);
+        append(`[${ts()}]   dateTimeUtc: ${missedCall.dateTimeUtc}`);
+        // Show what ContactNumber we would extract
+        const isExt = p => p && String(p).replace(/\D/g,'').length >= 10;
+        const clean = p => p ? '+' + String(p).replace(/\D/g,'') : '';
+        let cn = '';
+        if (missedCall.caller?.phone && isExt(missedCall.caller.phone)) cn = clean(missedCall.caller.phone);
+        else if (missedCall.caller?.name && isExt(missedCall.caller.name.replace(/\D/g,''))) cn = clean(missedCall.caller.name);
+        else if (missedCall.called?.length) { const e = missedCall.called.find(p=>p.phone&&isExt(p.phone)); if(e) cn=clean(e.phone); }
+        if (!cn && missedCall.caller?.extension && isExt(missedCall.caller.extension)) cn = clean(missedCall.caller.extension);
+        append(`[${ts()}]   → Extracted ContactNumber: "${cn || 'EMPTY — cannot group this call!'}"`);
+      } else {
+        append(`[${ts()}]   No Missed calls in first 100 today — try a wider date range`);
+      }
+    } else {
+      append(`[${ts()}]   No calls found for today (${selectedTZ} date: ${today}).`);
+    }
+  } catch(e) {
+    append(`[${ts()}] ✗ /calls FAILED — ${e.message}`);
+  }
+
+  append('');
+  append(`[${ts()}] ── Test Complete ──`);
+  btn.textContent = '🔍 Test'; btn.disabled = false;
+}
+
+function copyTestLog() {
+  const text = document.getElementById('testLog').textContent;
+  const btn  = document.getElementById('btnCopyLog');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.innerHTML = '✓ Copied!'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--green)';
+    setTimeout(() => { btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Log'; btn.style.color=''; btn.style.borderColor=''; }, 2200);
+  }).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Log'; }, 2200);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// DATE INIT & MODE (identical to original)
+// ═══════════════════════════════════════════════════════
+const reportDateEl   = document.getElementById('reportDate');
+const startTimeEl    = document.getElementById('startTime');
+const endTimeEl      = document.getElementById('endTime');
+const dateFromEl     = document.getElementById('dateFrom');
+const dateToEl       = document.getElementById('dateTo');
+const generateBtn    = document.getElementById('generateBtn');
+const errorMsg       = document.getElementById('errorMsg');
+
+// Get today's date string (YYYY-MM-DD) in the currently selected timezone
+function todayInTZ(tz) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+    // en-CA gives YYYY-MM-DD natively
+    return parts;
+  } catch(e) {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  }
+}
+
+(function(){
+  const today = todayInTZ(selectedTZ);
+  reportDateEl.value=today; dateFromEl.value=today; dateToEl.value=today;
+})();
+
+function setMode(mode, silent){
+  currentMode=mode;
+  const isSingle=mode==='single';
+  document.getElementById('filterSingle').style.display=isSingle?'':'none';
+  document.getElementById('filterRange').style.display=isSingle?'none':'';
+  document.getElementById('rangeInfo').style.display=isSingle?'none':'block';
+  document.getElementById('modeSingle').style.background=isSingle?'var(--blue)':'var(--surface)';
+  document.getElementById('modeSingle').style.color=isSingle?'#fff':'var(--g700)';
+  document.getElementById('modeRange').style.background=isSingle?'var(--surface)':'var(--blue)';
+  document.getElementById('modeRange').style.color=isSingle?'var(--g700)':'#fff';
+  // Only auto-sync when user clicks the toggle directly (not when called from applyPreset)
+  if (!silent && isConnected && csvData.length > 0) apiSync();
+}
+
+// Flag to suppress date-change listeners during programmatic preset application
+let _applyingPreset = false;
+
+function applyPreset(preset) {
+  // Highlight active button
+  document.querySelectorAll('.qs-btn').forEach(b => b.classList.remove('qs-active'));
+  if (event && event.target) event.target.classList.add('qs-active');
+
+  const todayStr = todayInTZ(selectedTZ);
+  const subDays = (dateStr, n) => {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().split('T')[0];
+  };
+  const subMonths = (dateStr, n) => {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    d.setUTCMonth(d.getUTCMonth() - n);
+    return d.toISOString().split('T')[0];
+  };
+
+  // Suppress date-change listeners while we set values programmatically
+  _applyingPreset = true;
+
+  if (preset === '1h') {
+    const now = new Date();
+    const offsetMs = _getTZOffset(selectedTZ, now.getTime());
+    const localMs  = now.getTime() + offsetMs;
+    const pad = n => String(n).padStart(2,'0');
+    const localNow   = new Date(localMs);
+    const localStart = new Date(localMs - 3600000);
+    setMode('single', true);
+    document.getElementById('reportDate').value = todayStr;
+    document.getElementById('startTime').value  = `${pad(localStart.getUTCHours())}:${pad(localStart.getUTCMinutes())}`;
+    document.getElementById('endTime').value    = `${pad(localNow.getUTCHours())}:${pad(localNow.getUTCMinutes())}`;
+  } else if (preset === 'today') {
+    setMode('single', true);
+    document.getElementById('reportDate').value = todayStr;
+    document.getElementById('startTime').value  = '00:00';
+    document.getElementById('endTime').value    = '23:59';
+  } else if (preset === 'yesterday') {
+    setMode('single', true);
+    document.getElementById('reportDate').value = subDays(todayStr, 1);
+    document.getElementById('startTime').value  = '00:00';
+    document.getElementById('endTime').value    = '23:59';
+  } else if (preset === '3d') {
+    setMode('range', true);
+    document.getElementById('dateFrom').value = subDays(todayStr, 2);
+    document.getElementById('dateTo').value   = todayStr;
+  } else if (preset === '7d') {
+    setMode('range', true);
+    document.getElementById('dateFrom').value = subDays(todayStr, 6);
+    document.getElementById('dateTo').value   = todayStr;
+  } else if (preset === '15d') {
+    setMode('range', true);
+    document.getElementById('dateFrom').value = subDays(todayStr, 14);
+    document.getElementById('dateTo').value   = todayStr;
+  } else if (preset === '1m') {
+    setMode('range', true);
+    document.getElementById('dateFrom').value = subMonths(todayStr, 1);
+    document.getElementById('dateTo').value   = todayStr;
+  } else if (preset === '3m') {
+    setMode('range', true);
+    document.getElementById('dateFrom').value = subMonths(todayStr, 3);
+    document.getElementById('dateTo').value   = todayStr;
+  }
+
+  _applyingPreset = false;
+
+  // Now sync once with all correct dates set
+  if (isConnected) {
+    apiSync();
+  } else if (csvData.length > 0) {
+    document.getElementById('generateBtn').disabled = false;
+  }
+}
+
+// Re-sync when date inputs change (but not during programmatic preset application)
+['reportDate','startTime','endTime','dateFrom','dateTo'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => {
+    if (_applyingPreset) return; // skip — applyPreset handles its own sync
+    if (isConnected) { document.getElementById('generateBtn').disabled=true; apiSync(); }
+  });
+});
+
+generateBtn.addEventListener('click',()=>{
+  if(!csvData.length){showErr('No data loaded — connect and sync first.');return;}
+  if(currentMode==='single'&&!reportDateEl.value){showErr('Please select a date');return;}
+  if(currentMode==='range'&&(!dateFromEl.value||!dateToEl.value)){showErr('Please select both From and To dates');return;}
+  if(currentMode==='range'&&dateFromEl.value>dateToEl.value){showErr('From date must be before or equal to To date');return;}
+  hideErr(); runBuildReport();
+});
+
+
+function runBuildReport(){
+  const spinner=document.getElementById('loadingSpinner');
+  if(spinner)spinner.style.display='block';
+  generateBtn.disabled=true;
+
+  // Step 1: build setup data synchronously (fast)
+  let setup;
+  try{ setup=buildReportSetup(); }
+  catch(err){ showErr('Error: '+err.message); if(spinner)spinner.style.display='none'; generateBtn.disabled=false; return; }
+
+
+
+  // Step 2: process numbers in async chunks so browser never freezes
+  const numKeys=Object.keys(setup.byNum);
+  const CHUNK=300; // process 300 numbers per tick
+  let idx=0;
+
+  function processChunk(){
+    const end=Math.min(idx+CHUNK, numKeys.length);
+    for(;idx<end;idx++){
+      try{
+        const num=numKeys[idx];
+        const calls=setup.byNum[num];
+        processNumber(num, calls, setup);
+      }catch(e){/* skip bad number, continue */}
+    }
+    if(spinner){
+      const pct=Math.round(idx/numKeys.length*100);
+      const msg=spinner.querySelector('[data-msg]');
+      if(msg)msg.textContent=`Processing call data… ${pct}%`;
+    }
+    if(idx<numKeys.length){
+      setTimeout(processChunk,0); // yield to browser between chunks
+    } else {
+      // All done — finalize and render
+      try{
+        const r=buildReportFinalize(setup);
+        renderReport(r);
+      }catch(err){showErr('Error rendering: '+err.message);}
+      finally{
+        if(spinner)spinner.style.display='none';
+        generateBtn.disabled=false;
+      }
+    }
+  }
+  setTimeout(processChunk,0);
+}
+
+function parseDT(s){
+  if(!s)return null;
+  try{
+    const str=s.trim();
+    if(!str)return null;
+    const parts=str.split(' ');
+    if(parts.length<2)return null;
+    const datePart=parts[0];
+    const timePart=parts[1];
+    const ampm=parts.length>=3?parts[parts.length-1].toUpperCase():'';
+    const isAP=/^[AP]M$/i.test(ampm);
+
+    // Support both '/' (MM/DD/YYYY) and '-' (MM-DD-YYYY) separators
+    const sep=datePart.includes('/')?'/':'-';
+    const dp=datePart.split(sep);
+    if(dp.length!==3)return null;
+
+    // Detect if date is YYYY-MM-DD (ISO) or MM/DD/YYYY or MM-DD-YYYY
+    let mo,dd,yy;
+    if(dp[0].length===4){
+      // ISO: YYYY-MM-DD
+      yy=parseInt(dp[0]);mo=parseInt(dp[1])-1;dd=parseInt(dp[2]);
+    } else {
+      // MM/DD/YYYY or MM-DD-YYYY
+      mo=parseInt(dp[0])-1;dd=parseInt(dp[1]);yy=parseInt(dp[2]);
+    }
+
+    const tp=timePart.split(':');
+    let hh=parseInt(tp[0]),mn=parseInt(tp[1])||0,ss=tp[2]?parseInt(tp[2]):0;
+
+    // Apply AM/PM if present
+    if(isAP){
+      if(ampm==='PM'&&hh!==12)hh+=12;
+      if(ampm==='AM'&&hh===12)hh=0;
+    }
+    // 24-hour format: if no AM/PM and hh is valid 0-23, use as-is
+    if(isNaN(yy)||isNaN(mo)||isNaN(dd)||isNaN(hh)||isNaN(mn))return null;
+    return new Date(yy,mo,dd,hh,mn,ss);
+  }catch{return null}
+}
+
+function fmtDT(s){const d=parseDT(s);if(!d)return 'N/A';return d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
+function fmt12(t){const[hh,mm]=t.split(':');const h=parseInt(hh);return`${h%12||12}:${mm} ${h>=12?'PM':'AM'}`}
+function plural(n,s){return`${n} ${s}${n===1?'':'s'}`}
+
+function buildReport(){
+  // Compatibility wrapper — calls setup+process+finalize synchronously
+  // Used only when called directly (not via runBuildReport chunking)
+  const setup=buildReportSetup();
+  Object.keys(setup.byNum).forEach(num=>processNumber(num,setup.byNum[num],setup));
+  return buildReportFinalize(setup);
+}
+
+function buildReportSetup(){
+  const isRange=currentMode==='range';
+  const sel=reportDateEl.value;
+  const t0=startTimeEl.value||'00:00';
+  const t1=endTimeEl.value||'23:59';
+  const dateFrom=isRange?dateFromEl.value:sel;
+  const dateTo=isRange?dateToEl.value:sel;
+
+  const dateStr=dt=>`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  const inRange=ds=>ds>=dateFrom&&ds<=dateTo;
+
+  const parseSec=s=>{
+    if(!s||!s.trim())return 0;
+    const t=s.trim();
+    if(t.includes(':')){const p=t.split(':');return parseInt(p[0])*3600+parseInt(p[1])*60+(parseInt(p[2])||0);}
+    return parseInt(t)||0;
+  };
+
+  // ALL calls within date range
+  const allRange=csvData.filter(c=>c._dtObj&&inRange(dateStr(c._dtObj)));
+
+  // FILTERED: time window for single day; all for range
+  const filtered=isRange?allRange:allRange.filter(c=>{
+    const hh=String(c._dtObj.getHours()).padStart(2,'0'),mi=String(c._dtObj.getMinutes()).padStart(2,'0');
+    return`${hh}:${mi}`>=t0&&`${hh}:${mi}`<=t1;
+  });
+
+  // O(1) lookup set using _uid
+  const filteredSet=new Set(filtered.map(c=>c._uid));
+  const isInFiltered=c=>filteredSet.has(c._uid);
+  const isUnattended=c=>c.Direction==='Incoming'&&['Missed','VoiceMail','Dropped','Canceled'].includes(c.Result);
+  const isOutreach=c=>c.Direction==='Outgoing'||(c.Direction==='Incoming'&&c.Result==='Connected');
+
+  // Inbound connected count
+  let conn=0;
+  filtered.forEach(c=>{if(c.Direction==='Incoming'&&c.Result==='Connected')conn++;});
+
+  // Group ALL range calls by ContactNumber (O(n) single pass)
+  // csvData already sorted ASC, so allRange is also ASC — no per-group sort needed
+  const byNum={};
+  allRange.forEach(c=>{
+    if(!c.ContactNumber)return;
+    if(!byNum[c.ContactNumber])byNum[c.ContactNumber]=[];
+    byNum[c.ContactNumber].push(c);
+  });
+
+  // Agent analysis (O(n) single pass over filtered)
+  // isAgentName: must be a real human agent name
+  // Rejects: phone numbers, short extensions, system queue names
+  const SYSTEM_NAMES = new Set(['matrack support','matrack hotline','matrack','auto attendant','ivr','queue','voicemail','virtual receptionist']);
+  const isAgentName = s => {
+    if (!s || !s.trim()) return false;
+    const clean = s.trim().replace(/\s/g,'');
+    // Reject phone numbers
+    if (/^\+?\d{5,}$/.test(clean)) return false;
+    // Reject pure short extensions
+    if (/^\d{1,4}$/.test(clean)) return false;
+    // Reject known system/queue names
+    if (SYSTEM_NAMES.has(s.trim().toLowerCase())) return false;
+    return true;
+  };
+  const agentMap={};
+  filtered.forEach(c=>{
+    const agents=[];
+    if(isAgentName(c.Owner))agents.push(c.Owner.trim());
+    if(!agents.length&&c.Participants){
+      c.Participants.split(';').forEach(p=>{const name=p.replace(/\(.*?\)/g,'').trim();if(isAgentName(name))agents.push(name);});
+    }
+    const seen=new Set();
+    agents.forEach(agent=>{
+      if(seen.has(agent))return;seen.add(agent);
+      if(!agentMap[agent])agentMap[agent]={total:0,inbound:0,outbound:0,missed:0,totalSec:0,inboundSec:0,outboundSec:0};
+      const a=agentMap[agent];
+      const sec=parseSec(c.TotalSeconds);
+      const isIn=c.Direction==='Incoming',isOut=c.Direction==='Outgoing';
+      const isUnatt=['Missed','VoiceMail','Dropped','Canceled'].includes(c.Result);
+      a.total++;if(isIn)a.inbound++;if(isOut)a.outbound++;if(isIn&&isUnatt)a.missed++;
+      a.totalSec+=sec;if(isIn)a.inboundSec+=sec;if(isOut)a.outboundSec+=sec;
+    });
+  });
+
+  return{
+    isRange,sel,t0,t1,dateFrom,dateTo,dateStr,
+    allRange,filtered,filteredSet,isInFiltered,
+    isUnattended,isOutreach,parseSec,
+    conn,byNum,agentMap,
+    missedByNum:{},cbNums:{},needFU:{}
+  };
+}
+
+function processNumber(num,calls,setup){
+  const{isInFiltered,isUnattended,isOutreach,missedByNum,cbNums,needFU,isRange,dateStr}=setup;
+
+  // Check if this number has any unattended inbound in filtered set
+  const hasMissed=calls.some(c=>isUnattended(c)&&isInFiltered(c));
+  if(!hasMissed)return;
+
+  // Build missedByNum entry
+  if(!missedByNum[num])missedByNum[num]={count:0,lastCallTime:'',firstCallTime:'',calls:[],participants:'',businessLabel:''};
+  const mb=missedByNum[num];
+  calls.forEach(c=>{
+    if(!isUnattended(c)||!isInFiltered(c))return;
+    mb.count++;
+    if(!mb.firstCallTime)mb.firstCallTime=c.CallStartTime;
+    if(!mb.lastCallDT||c._dtObj>mb.lastCallDT){mb.lastCallTime=c.CallStartTime;mb.lastCallDT=c._dtObj;}
+    if(c.Participants&&!mb.participants)mb.participants=c.Participants;
+    if(c.BusinessNumberLabel&&!mb.businessLabel)mb.businessLabel=c.BusinessNumberLabel;
+    mb.calls.push({time:c.CallStartTime,result:c.Result,date:dateStr(c._dtObj)});
+  });
+
+  // Rolling pending state — walk calls in chronological order (already sorted)
+  let pendingDT=null;
+  let lastCbTime=null,lastCbType=null,lastCbAgent='',lastCbResult='';
+  let missedOnDate='',callbackOnDate='';
+
+  for(const c of calls){
+    if(isUnattended(c)&&isInFiltered(c)){
+      pendingDT=c._dtObj;
+      missedOnDate=dateStr(c._dtObj);
+      continue;
+    }
+    if(pendingDT&&isOutreach(c)&&c._dtObj>pendingDT){
+      const obConn=c.Direction==='Outgoing'&&c.Result==='Connected';
+      const ibConn=c.Direction==='Incoming'&&c.Result==='Connected';
+      lastCbTime=c.CallStartTime;
+      lastCbResult=c.Result;
+      callbackOnDate=dateStr(c._dtObj);
+      if(obConn)lastCbType='Outbound connected';
+      else if(ibConn)lastCbType='Incoming connected';
+      else lastCbType=`Outbound attempted (${c.Result})`;
+      lastCbAgent=c.Owner||'';
+      pendingDT=null;
+    }
+  }
+
+  if(!pendingDT&&lastCbTime){
+    const isCrossDay=isRange&&missedOnDate&&callbackOnDate&&missedOnDate!==callbackOnDate;
+    let daysDiff=0,daysDiffLabel='';
+    if(isCrossDay){
+      const ms1=new Date(missedOnDate+'T00:00:00').getTime();
+      const ms2=new Date(callbackOnDate+'T00:00:00').getTime();
+      daysDiff=Math.round((ms2-ms1)/(1000*60*60*24));
+      if(daysDiff===1)daysDiffLabel='Called back next day';
+      else if(daysDiff>1)daysDiffLabel=`Called back ${daysDiff} days later`;
+    }
+    cbNums[num]={...mb,callbackTime:lastCbTime,callbackType:lastCbType,callbackAgent:lastCbAgent,callbackResult:lastCbResult,missedOnDate,callbackOnDate,isCrossDay,daysDiff,daysDiffLabel};
+  } else {
+    needFU[num]=mb;
+  }
+}
+
+function buildReportFinalize(setup){
+  const{agentMap,conn,cbNums,needFU,missedByNum,isRange,sel,dateFrom,dateTo,t0,t1}=setup;
+
+  const agentStats=Object.entries(agentMap)
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([name,s])=>({
+      name,total:s.total,inbound:s.inbound,outbound:s.outbound,missed:s.missed,
+      totalSec:s.totalSec,inboundSec:s.inboundSec,outboundSec:s.outboundSec,
+      ahtTotal:s.total>0?Math.round(s.totalSec/s.total):0,
+      ahtInbound:s.inbound>0?Math.round(s.inboundSec/s.inbound):0,
+      ahtOutbound:s.outbound>0?Math.round(s.outboundSec/s.outbound):0
+    }));
+
+  return{
+    date:sel,dateFrom,dateTo,isRange,
+    startTime:t0,endTime:t1,
+    connectedCount:conn,
+    totalMissedContacts:Object.keys(missedByNum).length,
+    calledBackCount:Object.keys(cbNums).length,
+    needFollowUpCount:Object.keys(needFU).length,
+    needFollowUpNumbers:needFU,
+    calledBackNumbers:cbNums,
+    agentStats,
+    _filtered: setup.filtered   // pass through for call log table
+  };
+}
+
+
+function pillsFromCalls(calls){
+  const cts={};
+  (calls||[]).forEach(c=>cts[c.result]=(cts[c.result]||0)+1);
+  return Object.entries(cts).map(([type,cnt])=>{
+    const cls=type==='Missed'?'pm':type==='VoiceMail'?'pv':type==='Dropped'?'pd':'pc';
+    return`<span class="pill ${cls}">${cnt} ${type}</span>`;
+  }).join(' ');
+}
+
+function fmtSec(sec){
+  if(!sec)return'0s';
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  if(h)return`${h}h ${m}m ${s}s`;
+  if(m)return`${m}m ${s}s`;
+  return`${s}s`;
+}
+
+function renderReport(r){
+  const fmtDateStr=ds=>new Date(ds+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const fmtDate=r.isRange?`${fmtDateStr(r.dateFrom)} – ${fmtDateStr(r.dateTo)}`:fmtDateStr(r.date);
+  const pb=document.getElementById('periodBanner');
+  const pbText=document.getElementById('periodBannerText');
+  const uniqueDaysInReport=r.isRange?Math.round((new Date(r.dateTo+'T00:00:00')-new Date(r.dateFrom+'T00:00:00'))/(1000*60*60*24))+1:1;
+  pbText.textContent=r.isRange?`📅 Checked: ${fmtDate}  (${uniqueDaysInReport} day${uniqueDaysInReport!==1?'s':''})`+(csvTimezone?`  ·  ${csvTimezone}`:''):`${fmtDate}  ·  ${fmt12(r.startTime)} – ${fmt12(r.endTime)}`+(csvTimezone?`  ·  ${csvTimezone}`:'');
+  pb.style.display='flex';
+
+  document.getElementById('sConnected').textContent=r.connectedCount;
+  document.getElementById('sFollowup').textContent=r.needFollowUpCount;
+  document.getElementById('sCalledBack').textContent=r.calledBackCount;
+  document.getElementById('sTotalMissed').textContent=r.totalMissedContacts;
+  // New tiles: total inbound and outbound from filtered calls
+  const allFiltered0 = r._filtered || [];
+  const totalInbound  = allFiltered0.filter(c => c.Direction === 'Incoming').length;
+  const totalOutbound = allFiltered0.filter(c => c.Direction === 'Outgoing').length;
+  document.getElementById('sTotalInbound').textContent  = totalInbound;
+  document.getElementById('sTotalOutbound').textContent = totalOutbound;
+  document.getElementById('statsRow').style.display='grid';
+
+  const fuKeys=Object.keys(r.needFollowUpNumbers).sort((a,b)=>(parseDT(r.needFollowUpNumbers[b].lastCallTime)||0)-(parseDT(r.needFollowUpNumbers[a].lastCallTime)||0));
+  const cbKeys=Object.keys(r.calledBackNumbers).sort((a,b)=>(parseDT(r.calledBackNumbers[b].callbackTime)||0)-(parseDT(r.calledBackNumbers[a].callbackTime)||0));
+
+  const fmtCBList=fuKeys.length===0?'No missed calls requiring follow up':fuKeys.map((n,i)=>`${i+1}. ${n}`).join('\n');
+  const fmtContactDetails=fuKeys.length===0?'No missed calls requiring follow up':fuKeys.map(n=>{const d=r.needFollowUpNumbers[n];const cts={};d.calls.forEach(c=>cts[c.result]=(cts[c.result]||0)+1);return`${n}: ${plural(d.count,'call')} (${Object.entries(cts).map(([t,c])=>`${c} ${t}`).join(' + ')}) - Last: ${fmtDT(d.lastCallTime)}`}).join('\n');
+  const fmtCBDetails=cbKeys.length===0?'No called back numbers':cbKeys.map(n=>{const d=r.calledBackNumbers[n];const cts={};d.calls.forEach(c=>cts[c.result]=(cts[c.result]||0)+1);return`${n}: ${plural(d.count,'call')} (${Object.entries(cts).map(([t,c])=>`${c} ${t}`).join(' + ')}) - Called back at: ${fmtDT(d.callbackTime)} (${d.callbackType})`}).join('\n');
+
+  const analysisText=`Call Analysis Report
+${r.isRange?'Date Range: '+fmtDate:'Date: '+fmtDate+'\nTime: '+fmt12(r.startTime)+' - '+fmt12(r.endTime)}${csvTimezone?' '+csvTimezone:''}
+
+Summary Statistics:
+Inbound Connected: ${r.connectedCount}
+Inbound Missed: ${plural(r.totalMissedContacts,'contact')} with missed calls (Follow-up done: ${r.calledBackCount}, No follow-up yet: ${r.needFollowUpCount})
+
+Please call back these missed calls:
+${fmtCBList}
+
+Contact Numbers Needing Follow Up:
+${fmtContactDetails}
+
+Called Back Missed Calls:
+${fmtCBDetails}
+
+Final Count: ${plural(r.connectedCount,'inbound connected call')}, ${plural(r.needFollowUpCount,'contact')} needing follow-up`;
+
+  document.getElementById('analysisBody').textContent=analysisText;
+  document.getElementById('analysisCard').style.display='block';
+
+  // Split analysis text for PDF: page 1 = everything up to "Called Back Missed Calls:"
+  // page 2 = "Called Back Missed Calls:" section
+  const splitMarker = 'Called Back Missed Calls:';
+  const splitIdx = analysisText.indexOf(splitMarker);
+  const page1Text = splitIdx !== -1 ? analysisText.substring(0, splitIdx).trimEnd() : analysisText;
+  const page2Text = splitIdx !== -1 ? analysisText.substring(splitIdx) : '';
+
+  if(splitIdx !== -1){
+    document.getElementById('analysisBody').textContent = page1Text;
+    document.getElementById('analysisBodyCB').textContent = page2Text;
+    document.getElementById('analysisCardCB').style.display = 'block';
+  }
+
+  // Copy only copies what is visible in the Analysis Summary box (page 1)
+  const copyBtn=document.getElementById('btnCopy');
+  copyBtn.onclick=()=>{navigator.clipboard.writeText(page1Text).then(()=>{copyBtn.textContent='✓ Copied!';copyBtn.classList.add('ok');setTimeout(()=>{copyBtn.textContent='Copy';copyBtn.classList.remove('ok')},2000)})};
+  // Download still gets the full text
+  document.getElementById('btnDownload').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([analysisText],{type:'text/plain'}));a.download=`call-report_${r.isRange?r.dateFrom+'_to_'+r.dateTo:r.date}.txt`;a.click()};
+
+  // PDF export — store meta for use by exportPdf()
+  window._pdfMeta={fmtDate,startTime:r.startTime,endTime:r.endTime,isRange:r.isRange};
+  window._cbKeysForPdf = cbKeys;
+  window._cbNumsForPdf = r.calledBackNumbers;
+
+  document.getElementById('fuBadge').textContent=r.needFollowUpCount;
+  document.getElementById('fuBody').innerHTML=fuKeys.length===0?'<tr><td colspan="6" class="no-data">No missed calls requiring follow up 🎉</td></tr>':fuKeys.map(n=>{
+    const d=r.needFollowUpNumbers[n];
+    const rawP=d.participants||'';
+    const cleanP=rawP?[...new Set(rawP.split(';').map(p=>p.replace(/\(.*?\)/g,'').trim()).filter(Boolean))].join(', '):'—';
+    const biz=d.businessLabel||'—';
+    // Show full date+time in red for last missed call
+    const lastMissedDT=parseDT(d.lastCallTime);
+    const lastMissedFull=lastMissedDT?lastMissedDT.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}):'—';
+    return`<tr>
+      <td class="mono">${n}</td>
+      <td><strong>${d.count}</strong></td>
+      <td style="font-size:13px;font-weight:500;color:#d93025">${lastMissedFull}</td>
+      <td>${pillsFromCalls(d.calls)}</td>
+      <td style="font-size:12px;color:var(--g700)">${cleanP}</td>
+      <td style="font-size:12px;color:var(--g700)">${biz}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('fuCard').style.display='block';
+
+  // Agent Analysis Table
+  const agentStats=r.agentStats||[];
+  document.getElementById('agentBadge').textContent=`${agentStats.length} agent${agentStats.length!==1?'s':''}`;
+  document.getElementById('agentExportDate').textContent=fmtDate;
+  document.getElementById('agentBody').innerHTML=agentStats.length===0
+    ?'<tr><td colspan="11" class="no-data">No agent data available</td></tr>'
+    :agentStats.map(a=>`<tr>
+      <td style="font-family:var(--font);font-weight:500;color:var(--g800)">${a.name}</td>
+      <td class="td-highlight" style="text-align:right">${a.total}</td>
+      <td style="text-align:right;color:var(--blue)">${a.inbound}</td>
+      <td style="text-align:right;color:var(--green)">${a.outbound}</td>
+      <td style="text-align:right;color:var(--red)">${a.missed}</td>
+      <td class="td-highlight" style="text-align:right">${fmtSec(a.totalSec)}</td>
+      <td style="text-align:right;color:var(--g600)">${fmtSec(a.inboundSec)}</td>
+      <td style="text-align:right;color:var(--g600)">${fmtSec(a.outboundSec)}</td>
+      <td class="td-highlight" style="text-align:right">${fmtSec(a.ahtTotal)}</td>
+      <td style="text-align:right;color:var(--g600)">${fmtSec(a.ahtInbound)}</td>
+      <td style="text-align:right;color:var(--g600)">${fmtSec(a.ahtOutbound)}</td>
+    </tr>`).join('');
+  document.getElementById('agentCard').style.display='block';
+
+  // ── CALLED BACK MISSED CALLS TABLE ──────────────────────────────────────────
+  document.getElementById('calledBackBadge').textContent = cbKeys.length;
+  document.getElementById('calledBackBody').innerHTML = cbKeys.length === 0
+    ? '<tr><td colspan="7" class="no-data">No called back numbers in this period</td></tr>'
+    : cbKeys.map(n => {
+        const d = r.calledBackNumbers[n];
+        // Call types pills
+        const cts = {};
+        d.calls.forEach(c => cts[c.result] = (cts[c.result]||0) + 1);
+        const typePills = Object.entries(cts).map(([t,c]) => {
+          const cls = t==='Connected'?'pc':t==='Missed'?'pm':t==='VoiceMail'?'pv':t==='Dropped'?'pd':'';
+          return `<span class="pill ${cls||''}" style="${cls?'':''}">${c} ${t}</span>`;
+        }).join(' ');
+        // Dates
+        const missedDT = parseDT(d.lastCallTime);
+        const missedFull = missedDT ? missedDT.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '—';
+        const cbDT = parseDT(d.callbackTime);
+        const cbFull = cbDT ? cbDT.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '—';
+        // Follow-up status pill
+        const isConn = d.callbackType && d.callbackType.includes('connected');
+        const statusPill = isConn
+          ? `<span class="pill pc" style="font-weight:600">${d.callbackType}</span>`
+          : `<span class="pill" style="background:#fff3e0;color:#e65100;font-weight:600">${d.callbackType||'—'}</span>`;
+        return `<tr>
+          <td class="mono">${n}</td>
+          <td><strong>${d.count}</strong></td>
+          <td style="font-size:13px;font-weight:500;color:#d93025">${missedFull}</td>
+          <td style="font-size:13px;font-weight:500;color:#1e8e3e">${cbFull}</td>
+          <td>${typePills}</td>
+          <td>${statusPill}</td>
+          <td style="font-size:13px;color:var(--g700)">${d.callbackAgent||'—'}</td>
+        </tr>`;
+      }).join('');
+  document.getElementById('calledBackCard').style.display = 'block';
+
+  // ── CALL LOG TABLE — all filtered calls sorted newest first ──
+  const allFiltered = r._filtered || [];
+  // Sort newest first by _dtObj
+  const sortedCalls = [...allFiltered].sort((a,b) => (b._dtObj||0) - (a._dtObj||0));
+  document.getElementById('cbBadge').textContent = sortedCalls.length + ' calls';
+
+  const resultPill = res => {
+    const cls = res==='Connected'?'pc':res==='Missed'?'pm':res==='VoiceMail'?'pv':res==='Dropped'?'pd':'';
+    return cls ? `<span class="pill ${cls}">${res}</span>` : `<span class="pill" style="background:#f1f3f4;color:#3c4043">${res||'—'}</span>`;
+  };
+  const dirPill = dir => {
+    if (dir==='Incoming') return `<span class="pill" style="background:#e8f0fe;color:#1557b0;font-weight:600">↙ Inbound</span>`;
+    return `<span class="pill" style="background:#e6f4ea;color:#1e8e3e;font-weight:600">↗ Outbound</span>`;
+  };
+  const durFmt = secs => { const s=parseInt(secs||0); if(!s)return'—'; const m=Math.floor(s/60),r=s%60; return m?`${m}m ${r}s`:`${r}s`; };
+
+  document.getElementById('cbBody').innerHTML = sortedCalls.length === 0
+    ? '<tr><td colspan="7" class="no-data">No calls in this date/time range</td></tr>'
+    : sortedCalls.map(c => {
+        const dt = c._dtObj ? c._dtObj.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}) : fmtDT(c.CallStartTime);
+        return `<tr>
+          <td class="mono">${c.ContactNumber||'—'}</td>
+          <td style="white-space:nowrap;font-family:var(--font-text);font-size:13px">${dt}</td>
+          <td>${dirPill(c.Direction)}</td>
+          <td style="font-size:13px;color:var(--g600)">${c.BusinessNumberLabel||'—'}</td>
+          <td>${resultPill(c.Result)}</td>
+          <td style="font-size:13px;color:var(--g600)">${durFmt(c.TotalSeconds)}</td>
+          <td style="font-size:13px;color:var(--g700)">${c.Owner||'—'}</td>
+        </tr>`;
+      }).join('');
+  document.getElementById('cbCard').style.display = 'block';
+  // Store for PDF export
+  window._callLogMeta = { title: 'Call Logs for the Selected Date and Times', dateLabel: fmtDate, calls: sortedCalls };
+
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── AGENT TABLE COPY (rich HTML → pastes into Word, Excel, Gmail, PPT) ──────
+function copyAgentTable(){
+  const tbl=document.getElementById('agentTable');
+  const dateStr=document.getElementById('agentExportDate').textContent||'';
+  const title=`Agent Call Handling Analysis${dateStr?' · '+dateStr:''}`;
+
+  const headers=Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+  const rows=Array.from(tbl.querySelectorAll('tbody tr'));
+
+  // Highlight columns: index 1 (Total Calls), 5 (Total Talk Time), 8 (Overall AHT)
+  const highlightCols=new Set([1,5,8]);
+
+  const thBase='padding:8px 12px;font-size:12px;font-weight:600;border:1px solid #dadce0;white-space:nowrap;';
+  const thHL='padding:8px 12px;font-size:12px;font-weight:700;border:1px solid #b3ccf5;white-space:nowrap;background:#e8f0fe;color:#1557b0;';
+  const tdBase='padding:8px 12px;font-size:13px;border:1px solid #e8eaed;';
+  const tdHL='padding:8px 12px;font-size:13px;font-weight:700;border:1px solid #c5d8f7;background:#f0f4ff;color:#1557b0;';
+
+  let html=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;width:100%">`;
+  html+=`<caption style="text-align:left;font-size:14px;font-weight:700;color:#202124;padding:0 0 10px;caption-side:top">${title}</caption>`;
+  html+=`<thead><tr>`;
+  headers.forEach((h,i)=>{
+    const hl=highlightCols.has(i);
+    const align=i===0?'left':'right';
+    html+=`<th style="${hl?thHL:thBase}text-align:${align};${hl?'':'background:#f8f9fa;color:#3c4043;'}">${h}</th>`;
+  });
+  html+=`</tr></thead><tbody>`;
+
+  rows.forEach((row,ri)=>{
+    const bg=ri%2===0?'#ffffff':'#f8f9fa';
+    html+=`<tr>`;
+    Array.from(row.querySelectorAll('td')).forEach((td,i)=>{
+      const val=td.innerText||td.textContent||'';
+      const hl=highlightCols.has(i);
+      const align=i===0?'left':'right';
+      const color=hl?'':'';
+      html+=`<td style="${hl?tdHL:tdBase}text-align:${align};${hl?'':'background:'+bg+';color:#202124;'}${i===0?'font-weight:500;':''}">${val}</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+
+  // Plain text fallback
+  const colWidths=headers.map(h=>Math.max(h.length,12));
+  rows.forEach(row=>{Array.from(row.querySelectorAll('td')).forEach((td,i)=>{colWidths[i]=Math.max(colWidths[i],(td.innerText||'').length)})});
+  const pad=(s,w)=>String(s).padEnd(w);
+  let plain=title+'\n'+'-'.repeat(colWidths.reduce((a,b)=>a+b+3,0))+'\n';
+  plain+=headers.map((h,i)=>pad(h,colWidths[i])).join(' | ')+'\n';
+  plain+=colWidths.map(w=>'-'.repeat(w)).join('-+-')+'\n';
+  rows.forEach(row=>{plain+=Array.from(row.querySelectorAll('td')).map((td,i)=>pad(td.innerText||'',colWidths[i])).join(' | ')+'\n'});
+
+  try{
+    const item=new ClipboardItem({
+      'text/html':new Blob([html],{type:'text/html'}),
+      'text/plain':new Blob([plain],{type:'text/plain'})
+    });
+    navigator.clipboard.write([item]).then(()=>{
+      const btn=document.getElementById('btnAgentCopy');
+      btn.textContent='✓ Copied!';btn.classList.add('ok');
+      setTimeout(()=>{btn.textContent='📋 Copy Table';btn.classList.remove('ok')},2500);
+    });
+  }catch(e){
+    navigator.clipboard.writeText(plain).then(()=>{
+      const btn=document.getElementById('btnAgentCopy');
+      btn.textContent='✓ Copied (plain text)';
+      setTimeout(()=>{btn.textContent='📋 Copy Table'},2500);
+    });
+  }
+}
+
+// No dropdown click handlers needed
+
+// ── AGENT TABLE EXPORT PDF (hidden iframe — no popup) ───────────────────────
+function exportAgentPdf(orientation){
+  const dateStr=document.getElementById('agentExportDate').textContent||'';
+  const tbl=document.getElementById('agentTable');
+  const thEls=Array.from(tbl.querySelectorAll('thead th'));
+  const rows=Array.from(tbl.querySelectorAll('tbody tr'));
+
+  let theadHtml='<thead><tr>';
+  thEls.forEach(th=>{
+    const align=th.style.textAlign||'left';
+    theadHtml+=`<th style="text-align:${align}">${th.textContent.trim()}</th>`;
+  });
+  theadHtml+='</tr></thead>';
+
+  let tbodyHtml='<tbody>';
+  rows.forEach(row=>{
+    tbodyHtml+='<tr>';
+    Array.from(row.querySelectorAll('td')).forEach(td=>{
+      const align=td.style.textAlign||'left';
+      const color=td.style.color||'';
+      const fw=td.style.fontWeight||'';
+      tbodyHtml+=`<td style="text-align:${align};${color?'color:'+color+';':''}${fw?'font-weight:'+fw+';':''}">${td.textContent.trim()}</td>`;
+    });
+    tbodyHtml+='</tr>';
+  });
+  tbodyHtml+='</tbody>';
+
+  const genTime=new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+  const css=`
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Google Sans','Product Sans',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{padding:12mm 10mm;background:#fff;font-size:11px}
+    .hdr{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:2px solid #dadce0;margin-bottom:14px}
+    .hdr-logo{width:34px;height:34px;border-radius:8px;background:#1a73e8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .hdr-logo svg{width:18px;height:18px;fill:#fff}
+    .hdr-title{font-size:16px;font-weight:700;color:#202124;line-height:1.2}
+    .hdr-sub{font-size:10px;color:#5f6368;margin-top:3px}
+    .hdr-right{margin-left:auto;font-size:9px;color:#80868b;text-align:right;white-space:nowrap}
+    .tbl-label{font-size:13px;font-weight:600;color:#202124;margin-bottom:10px;padding:8px 14px;background:#f8f9fa;border-radius:6px;border:1px solid #e8eaed;display:flex;justify-content:space-between;align-items:center}
+    .tbl-label span{font-size:11px;font-weight:400;color:#5f6368}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#f8f9fa;font-weight:600;font-size:9px;color:#3c4043;text-transform:uppercase;letter-spacing:.6px;padding:8px 11px;border-top:2px solid #dadce0;border-bottom:2px solid #dadce0;border-left:1px solid #e8eaed;border-right:1px solid #e8eaed;white-space:nowrap}
+    thead th:first-child{text-align:left!important}
+    thead th:nth-child(2),thead th:nth-child(6),thead th:nth-child(9){background:#e8f0fe!important;color:#1557b0!important;font-weight:700!important}
+    tbody td{padding:9px 11px;border-bottom:1px solid #e8eaed;color:#202124;font-size:10.5px;line-height:1.4}
+    tbody td:first-child{font-weight:500;color:#202124;text-align:left!important}
+    tbody td:nth-child(2),tbody td:nth-child(6),tbody td:nth-child(9){background:#f0f4ff!important;color:#1557b0!important;font-weight:700!important}
+    tbody tr:nth-child(even) td{background:#f8f9fa}
+    tbody tr:nth-child(even) td:nth-child(2),tbody tr:nth-child(even) td:nth-child(6),tbody tr:nth-child(even) td:nth-child(9){background:#e8effd!important}
+    tbody tr:last-child td{border-bottom:2px solid #dadce0}
+    @page{size:A4 landscape;margin:10mm 8mm}
+  `;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>
+  <div class="hdr">
+    <div class="hdr-logo"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg></div>
+    <div><div class="hdr-title">Matrack Missed Call Tracker</div><div class="hdr-sub">Matrack Support Team Missed Call Follow-up Audit &amp; Report</div></div>
+    <div class="hdr-right">Generated:<br>${genTime}</div>
+  </div>
+  <div class="tbl-label">Agent Call Handling Analysis <span>${dateStr}</span></div>
+  <table><thead>${theadHtml}</thead>${tbodyHtml}</table>
+  </body></html>`;
+
+  let iframe=document.getElementById('agentPdfFrame');
+  if(iframe)iframe.remove();
+  iframe=document.createElement('iframe');
+  iframe.id='agentPdfFrame';
+  iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1400px;height:900px;border:none;opacity:0';
+  document.body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  iframe.onload=()=>setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();},700);
+}
+
+// ── AGENT TABLE EXPORT IMAGE (html2canvas — no popup, exact appearance) ──────
+async function exportAgentImage(){
+  const dateStr=document.getElementById('agentExportDate').textContent||'';
+
+  if(typeof html2canvas==='undefined'){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload=res;s.onerror=rej;
+      document.head.appendChild(s);
+    }).catch(()=>null);
+  }
+  if(typeof html2canvas==='undefined'){alert('Could not load image library. Check your internet connection.');return;}
+
+  const hdr=document.getElementById('agentExportHeader');
+  const tblHd=document.getElementById('agentCard').querySelector('.tbl-hd');
+
+  // Hide the tbl-hd (title + badge + buttons) entirely during image capture
+  tblHd.style.display='none';
+  // Show the export date header instead
+  hdr.style.display='block';
+  // Add right padding so last column isn't cut off
+  const tblWrap=document.getElementById('agentCard').querySelector('div[style*="overflow-x"]');
+  if(tblWrap)tblWrap.style.paddingRight='20px';
+
+  const card=document.getElementById('agentCard');
+  const tbl=document.getElementById('agentTable');
+  try{
+    // Measure the exact table width to avoid trailing blank space
+    const tblWidth=tbl.offsetWidth+40;
+    const canvas=await html2canvas(card,{
+      backgroundColor:'#ffffff',
+      scale:2.5,
+      useCORS:true,
+      logging:false,
+      scrollX:-window.scrollX,
+      scrollY:-window.scrollY,
+      width:tblWidth,
+      height:card.offsetHeight
+    });
+    const link=document.createElement('a');
+    link.download=`agent-analysis_${(dateStr||'report').replace(/[\s,]/g,'-')}.png`;
+    link.href=canvas.toDataURL('image/png');
+    link.click();
+  }catch(err){
+    alert('Image export failed: '+err.message);
+  }finally{
+    hdr.style.display='none';
+    tblHd.style.display='';
+    if(tblWrap)tblWrap.style.paddingRight='2px';
+  }
+}
+
+// dropdown toggles removed
+
+function exportPdf(){
+  const meta=window._pdfMeta||{};
+  const subtitle=document.getElementById('pdfSubtitle');
+  const generated=document.getElementById('pdfGenerated');
+  if(subtitle)subtitle.textContent=meta.isRange?('📅 Date Range: '+(meta.fmtDate||'')+(csvTimezone?'  ·  '+csvTimezone:'')):(meta.fmtDate||'')+'  ·  '+fmt12(meta.startTime||'00:00')+' – '+fmt12(meta.endTime||'23:59')+(csvTimezone?'  ·  '+csvTimezone:'');
+  if(generated)generated.textContent=`Generated: ${new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}`;
+  setTimeout(()=>window.print(), 80);
+}
+
+function exportCallLogPdf() {
+  const meta = window._callLogMeta || {};
+  const calls = meta.calls || [];
+  const dateLabel = meta.dateLabel || '';
+  const genTime = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+  const tzLabel = csvTimezone || 'UTC';
+
+  const dirPill = dir => dir==='Incoming'
+    ? `<span style="background:#e8f0fe;color:#1557b0;font-weight:700;padding:2px 8px;border-radius:4px;font-size:9px">↙ Inbound</span>`
+    : `<span style="background:#e6f4ea;color:#1e8e3e;font-weight:700;padding:2px 8px;border-radius:4px;font-size:9px">↗ Outbound</span>`;
+  const resBg = r => r==='Connected'?'#e6f4ea':r==='Missed'?'#fce8e6':r==='VoiceMail'?'#fef7e0':r==='Dropped'?'#fce8e6':'#f1f3f4';
+  const resFg = r => r==='Connected'?'#137333':r==='Missed'?'#c5221f':r==='VoiceMail'?'#6b4c00':r==='Dropped'?'#9c1a16':'#3c4043';
+  const resPill = r => `<span style="background:${resBg(r)};color:${resFg(r)};font-weight:700;padding:2px 8px;border-radius:4px;font-size:9px">${r||'—'}</span>`;
+  const durFmt = s => { const n=parseInt(s||0); if(!n)return'—'; const m=Math.floor(n/60),r=n%60; return m?`${m}m ${r}s`:`${r}s`; };
+
+  const rows = calls.map(c => {
+    const dt = c._dtObj ? c._dtObj.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}) : fmtDT(c.CallStartTime);
+    return `<tr>
+      <td style="font-family:monospace">${c.ContactNumber||'—'}</td>
+      <td style="white-space:nowrap">${dt}</td>
+      <td>${dirPill(c.Direction)}</td>
+      <td>${c.BusinessNumberLabel||'—'}</td>
+      <td>${resPill(c.Result)}</td>
+      <td>${durFmt(c.TotalSeconds)}</td>
+      <td>${c.Owner||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Google Sans',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{padding:10mm 8mm;background:#fff;font-size:10px}
+    .hdr{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:2px solid #dadce0;margin-bottom:12px}
+    .hdr-logo{width:32px;height:32px;border-radius:8px;background:#1a73e8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .hdr-logo svg{width:17px;height:17px;fill:#fff}
+    .hdr-title{font-size:15px;font-weight:700;color:#202124}
+    .hdr-sub{font-size:9px;color:#5f6368;margin-top:2px}
+    .hdr-right{margin-left:auto;font-size:8.5px;color:#80868b;text-align:right;white-space:nowrap}
+    .tbl-label{font-size:12px;font-weight:600;color:#202124;margin-bottom:8px;padding:6px 12px;background:#f8f9fa;border-radius:6px;border:1px solid #e8eaed;display:flex;justify-content:space-between;align-items:center}
+    .tbl-label span{font-size:10px;font-weight:400;color:#5f6368}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#f8f9fa;font-weight:600;font-size:8.5px;color:#3c4043;text-transform:uppercase;letter-spacing:.5px;padding:7px 9px;border-top:2px solid #dadce0;border-bottom:2px solid #dadce0;white-space:nowrap}
+    tbody td{padding:7px 9px;border-bottom:1px solid #e8eaed;color:#202124;font-size:9.5px;line-height:1.4}
+    tbody tr:nth-child(even) td{background:#f8f9fa}
+    tbody tr:last-child td{border-bottom:2px solid #dadce0}
+    @page{size:A4 landscape;margin:8mm 6mm}
+  `;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>
+    <div class="hdr">
+      <div class="hdr-logo"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg></div>
+      <div>
+        <div class="hdr-title">Matrack — Call Logs for the Selected Date and Times</div>
+        <div class="hdr-sub">Matrack Support Team · Times in: ${tzLabel}</div>
+      </div>
+      <div class="hdr-right">Generated:<br>${genTime}</div>
+    </div>
+    <div class="tbl-label">Call Log <span>${dateLabel} · ${calls.length} calls · ${tzLabel}</span></div>
+    <table>
+      <thead><tr><th>Contact Number</th><th>Date &amp; Time</th><th>Direction</th><th>Business Line</th><th>Result</th><th>Duration</th><th>Agent / Owner</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </body></html>`;
+
+  let iframe = document.getElementById('callLogPdfFrame');
+  if (iframe) iframe.remove();
+  iframe = document.createElement('iframe');
+  iframe.id = 'callLogPdfFrame';
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1400px;height:900px;border:none;opacity:0';
+  document.body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  iframe.onload = () => setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 700);
+}
+
+function showErr(msg){errorMsg.textContent=msg;errorMsg.style.display='block';setTimeout(()=>errorMsg.style.display='none',5000)}
+function hideErr(){errorMsg.style.display='none'}
+
+function exportCalledBackPdf() {
+  const meta = window._pdfMeta || {};
+  const fmtDate = meta.fmtDate || '';
+  const genTime = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+  const tzLabel = csvTimezone || 'UTC';
+  const cbKeys = window._cbKeysForPdf || [];
+  const cbNums = window._cbNumsForPdf || {};
+
+  const resBg = r => r==='Connected'?'#e6f4ea':r==='Missed'?'#fce8e6':r==='VoiceMail'?'#fef7e0':r==='Dropped'?'#fce8e6':'#f1f3f4';
+  const resFg = r => r==='Connected'?'#137333':r==='Missed'?'#c5221f':r==='VoiceMail'?'#6b4c00':r==='Dropped'?'#9c1a16':'#3c4043';
+
+  const rows = cbKeys.map(n => {
+    const d = cbNums[n];
+    const cts = {};
+    d.calls.forEach(c => cts[c.result] = (cts[c.result]||0) + 1);
+    const typePills = Object.entries(cts).map(([t,c]) =>
+      `<span style="background:${resBg(t)};color:${resFg(t)};font-weight:700;padding:2px 7px;border-radius:4px;font-size:9px">${c} ${t}</span>`
+    ).join(' ');
+    const missedDT = parseDT(d.lastCallTime);
+    const missedFull = missedDT ? missedDT.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '—';
+    const cbDT = parseDT(d.callbackTime);
+    const cbFull = cbDT ? cbDT.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '—';
+    const isConn = d.callbackType && d.callbackType.includes('connected');
+    const statusPill = `<span style="background:${isConn?'#e6f4ea':'#fff3e0'};color:${isConn?'#137333':'#e65100'};font-weight:700;padding:2px 7px;border-radius:4px;font-size:9px">${d.callbackType||'—'}</span>`;
+    return `<tr>
+      <td style="font-family:monospace">${n}</td>
+      <td><strong>${d.count}</strong></td>
+      <td style="color:#d93025;font-weight:500">${missedFull}</td>
+      <td style="color:#1e8e3e;font-weight:500">${cbFull}</td>
+      <td>${typePills}</td>
+      <td>${statusPill}</td>
+      <td>${d.callbackAgent||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Google Sans',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{padding:10mm 8mm;background:#fff;font-size:10px}
+    .hdr{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:2px solid #dadce0;margin-bottom:12px}
+    .hdr-logo{width:32px;height:32px;border-radius:8px;background:#1a73e8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .hdr-logo svg{width:17px;height:17px;fill:#fff}
+    .hdr-title{font-size:15px;font-weight:700;color:#202124}
+    .hdr-sub{font-size:9px;color:#5f6368;margin-top:2px}
+    .hdr-right{margin-left:auto;font-size:8.5px;color:#80868b;text-align:right;white-space:nowrap}
+    .tbl-label{font-size:12px;font-weight:600;color:#202124;margin-bottom:8px;padding:6px 12px;background:#f8f9fa;border-radius:6px;border:1px solid #e8eaed;display:flex;justify-content:space-between;align-items:center}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#f8f9fa;font-weight:600;font-size:8.5px;color:#3c4043;text-transform:uppercase;letter-spacing:.5px;padding:7px 9px;border-top:2px solid #dadce0;border-bottom:2px solid #dadce0;white-space:nowrap}
+    tbody td{padding:7px 9px;border-bottom:1px solid #e8eaed;color:#202124;font-size:9.5px;line-height:1.4}
+    tbody tr:nth-child(even) td{background:#f8f9fa}
+    tbody tr:last-child td{border-bottom:2px solid #dadce0}
+    @page{size:A4 landscape;margin:8mm 6mm}
+  `;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>
+    <div class="hdr">
+      <div class="hdr-logo"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg></div>
+      <div>
+        <div class="hdr-title">Matrack — Called Back Missed Calls</div>
+        <div class="hdr-sub">${fmtDate} &nbsp;|&nbsp; ${tzLabel}</div>
+      </div>
+      <div class="hdr-right">Generated:<br>${genTime}</div>
+    </div>
+    <div class="tbl-label">Called Back Missed Calls <span>${cbKeys.length} contacts &nbsp;|&nbsp; ${tzLabel}</span></div>
+    <table>
+      <thead><tr><th>Contact Number</th><th>Missed Calls</th><th>Last Missed Call</th><th>Follow-up Time</th><th>Call Types</th><th>Follow-up Status</th><th>Agent</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </body></html>`;
+
+  let iframe = document.getElementById('calledBackPdfFrame');
+  if (iframe) iframe.remove();
+  iframe = document.createElement('iframe');
+  iframe.id = 'calledBackPdfFrame';
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1400px;height:900px;border:none;opacity:0';
+  document.body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  iframe.onload = () => setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 700);
+}
+</script>
+</body>
+</html>
