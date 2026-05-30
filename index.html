@@ -379,7 +379,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
             <input type="text" id="inputSecretKey" placeholder="Your user row key" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:#fff;color:#111">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:160px 1fr 190px;gap:14px;align-items:end;margin-bottom:14px">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:14px">
           <div>
             <label class="f-label">Proxy URL</label>
             <input type="text" id="inputProxy" value="https://matrack-proxy.sayan-sieva.workers.dev" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;outline:none;background:#fff;color:#111">
@@ -1043,7 +1043,7 @@ async function apiConnect() {
     const ping = await proxyFetch('/ping');
     if (!ping?.isSuccess && ping?.data === undefined) throw new Error('Ping failed');
   } catch(e) {
-    showApiErr('Cannot reach proxy: ' + e.message + '. Check that the Cloudflare Worker is deployed.');
+    showApiErr('Cannot reach proxy: ' + e.message + '. Check your Worker URL in the Proxy URL field.');
     document.getElementById('btnConnect').textContent = 'Connect & Fetch';
     document.getElementById('btnConnect').disabled = false;
     return;
@@ -1286,7 +1286,7 @@ function startClock() {
 async function testConnection() {
   const key    = document.getElementById('inputApiKey').value.trim();
   const secret = document.getElementById('inputSecretKey').value.trim();
-  const proxy  = document.getElementById('inputProxy').value.trim() || 'https://matrack-proxy.sayan-sieva.workers.dev';
+  const proxy  = document.getElementById('inputProxy').value.trim() || 'http://localhost:3333';
   if (!key || !secret) { showApiErr('Enter both keys before testing.'); return; }
 
   // Temporarily set so proxyFetch works
@@ -1319,7 +1319,7 @@ async function testConnection() {
     append(`[${ts()}] ✓ /ping OK — response: ${JSON.stringify(p)}`);
   } catch(e) {
     append(`[${ts()}] ✗ /ping FAILED — ${e.message}`);
-    append(`[${ts()}] → Check that the Cloudflare Worker is deployed at the proxy URL above.`);
+    append(`[${ts()}] → Is node proxy.js running? Check the terminal window.`);
     btn.textContent = '🔍 Test'; btn.disabled = false; return;
   }
 
