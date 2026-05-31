@@ -24,6 +24,29 @@
   --font-text:'Google Sans Text','Google Sans',system-ui,sans-serif;
   --font-mono:'Google Sans Mono','Roboto Mono',monospace;
 }
+/* ── DARK MODE VARIABLES ── */
+[data-theme="dark"]{
+  --blue:#4fa3ff;--blue-dark:#82bfff;--blue-light:#1a2e4a;
+  --red:#f28b82;--red-light:#2d1b1a;
+  --green:#81c995;--green-light:#1a2e22;
+  --yellow-light:#2d2510;--yellow-text:#fdd663;
+  --g50:#1e1e1e;--g100:#181818;--g200:#2a2a2a;--g300:#3a3a3a;
+  --g400:#555;--g500:#999;--g600:#bbb;--g700:#ddd;
+  --g800:#f1f1f1;--g900:#fff;
+  --surface:#242424;--shadow:0 1px 3px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --blue:#4fa3ff;--blue-dark:#82bfff;--blue-light:#1a2e4a;
+    --red:#f28b82;--red-light:#2d1b1a;
+    --green:#81c995;--green-light:#1a2e22;
+    --yellow-light:#2d2510;--yellow-text:#fdd663;
+    --g50:#1e1e1e;--g100:#181818;--g200:#2a2a2a;--g300:#3a3a3a;
+    --g400:#555;--g500:#999;--g600:#bbb;--g700:#ddd;
+    --g800:#f1f1f1;--g900:#fff;
+    --surface:#242424;--shadow:0 1px 3px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+  }
+}
 
 /* ── GLOBAL BASE ── */
 html{font-size:16px}
@@ -49,13 +72,13 @@ button,input,select,textarea{font-family:var(--font);font-size:inherit}
 .app-header{display:flex;align-items:center;gap:16px;padding:0 4px 24px}
 .logo{width:44px;height:44px;border-radius:10px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .logo svg{width:24px;height:24px;fill:#fff}
-.app-title{font-family:var(--font);font-size:22px;font-weight:700;color:#111113;letter-spacing:-.3px;line-height:1.2}
-.app-sub{font-size:13px;color:#3c4043;margin-top:4px;font-family:var(--font-text);font-weight:400;letter-spacing:0}
+.app-title{font-family:var(--font);font-size:22px;font-weight:700;color:var(--g800);letter-spacing:-.3px;line-height:1.2}
+.app-sub{font-size:13px;color:var(--g600);margin-top:4px;font-family:var(--font-text);font-weight:400;letter-spacing:0}
 
 /* ── CARD ── */
 .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
 .card-hd{padding:16px 22px 14px;border-bottom:1px solid var(--g200);display:flex;align-items:center;gap:10px}
-.card-hd h2{font-family:var(--font);font-size:15px;font-weight:600;color:#111113;letter-spacing:-.1px}
+.card-hd h2{font-family:var(--font);font-size:15px;font-weight:600;color:var(--g800);letter-spacing:-.1px}
 .card-bd{padding:22px}
 
 /* ── UPLOAD ── */
@@ -63,14 +86,14 @@ button,input,select,textarea{font-family:var(--font);font-size:inherit}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-light)}
 .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .upload-zone .uz-icon{font-size:24px;display:block;flex-shrink:0}
-.upload-zone h3{font-family:var(--font);font-size:14px;font-weight:600;color:#111113;text-align:left;line-height:1.3}
-.upload-zone p{font-size:13px;color:#3c4043;margin-top:3px;text-align:left;font-weight:400;font-family:var(--font-text)}
+.upload-zone h3{font-family:var(--font);font-size:14px;font-weight:600;color:var(--g800);text-align:left;line-height:1.3}
+.upload-zone p{font-size:13px;color:var(--g600);margin-top:3px;text-align:left;font-weight:400;font-family:var(--font-text)}
 .upload-zone.ok{border-color:var(--green);background:var(--green-light)}
 .upload-zone.ok h3{color:var(--green)}
 .parse-status{
   display:none;margin-top:12px;padding:10px 14px;
   background:var(--g50);border-left:3px solid var(--blue);border-radius:6px;
-  font-family:var(--font-text);font-size:13px;color:#202124;
+  font-family:var(--font-text);font-size:13px;color:var(--g700);
   font-weight:400;line-height:1.6;letter-spacing:0
 }
 
@@ -79,12 +102,12 @@ button,input,select,textarea{font-family:var(--font);font-size:inherit}
 @media(max-width:700px){.filters-row{grid-template-columns:1fr 1fr}}
 .f-label{
   display:block;font-family:var(--font);font-size:12px;font-weight:500;
-  color:#3c4043;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px
+  color:var(--g600);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px
 }
 input[type=date],input[type=time]{
   width:100%;font-family:var(--font-text);font-size:14px;font-weight:400;
   padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);
-  background:var(--surface);color:#111113;outline:none;
+  background:var(--surface);color:var(--g800);outline:none;
   transition:border-color .15s,box-shadow .15s;letter-spacing:0
 }
 input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15)}
@@ -98,7 +121,7 @@ input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shado
 }
 .btn-primary:hover{background:var(--blue-dark)}
 .btn-primary:disabled{background:var(--g400);cursor:not-allowed}
-.qs-btn{font-family:var(--font);font-size:12px;font-weight:500;padding:5px 11px;border:1.5px solid var(--g300);border-radius:6px;background:#fff;color:var(--g700);cursor:pointer;transition:all .12s;white-space:nowrap}
+.qs-btn{font-family:var(--font);font-size:12px;font-weight:500;padding:5px 11px;border:1.5px solid var(--g300);border-radius:6px;background:var(--surface);color:var(--g700);cursor:pointer;transition:all .12s;white-space:nowrap}
 .qs-btn:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
 .qs-btn.qs-active{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark);font-weight:600}
 .btn-sm{
@@ -133,11 +156,11 @@ input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shado
 .stat{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
 .stat .s-lbl{
   font-family:var(--font);font-size:10.5px;font-weight:500;
-  color:#3c4043;text-transform:uppercase;letter-spacing:.6px;line-height:1.4
+  color:var(--g600);text-transform:uppercase;letter-spacing:.6px;line-height:1.4
 }
 .stat .s-val{
   font-family:var(--font);font-size:28px;font-weight:700;
-  margin-top:6px;color:#111113;line-height:1.1
+  margin-top:6px;color:var(--g800);line-height:1.1
 }
 .stat.blue .s-val{color:var(--blue)}
 .stat.red .s-val{color:var(--red)}
@@ -153,12 +176,12 @@ input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shado
   border-bottom:1px solid var(--g200);
   display:flex;align-items:center;justify-content:space-between;gap:12px
 }
-.analysis-hd span{font-family:var(--font);font-size:15px;font-weight:600;color:#111113}
+.analysis-hd span{font-family:var(--font);font-size:15px;font-weight:600;color:var(--g800)}
 .analysis-actions{display:flex;gap:10px;align-items:center}
 .analysis-body{
   padding:20px 22px;
   font-family:var(--font-text);font-size:14px;font-weight:400;
-  color:#111113;line-height:1.85;
+  color:var(--g800);line-height:1.85;
   white-space:pre-wrap;word-break:break-word;
   max-height:380px;overflow-y:auto
 }
@@ -170,7 +193,7 @@ input[type=date]:focus,input[type=time]:focus{border-color:var(--blue);box-shado
   border-bottom:1px solid var(--g200);
   display:flex;align-items:center;gap:10px
 }
-.tbl-hd h3{font-family:var(--font);font-size:15px;font-weight:600;color:#111113}
+.tbl-hd h3{font-family:var(--font);font-size:15px;font-weight:600;color:var(--g800)}
 .badge{
   display:inline-flex;align-items:center;
   padding:3px 11px;border-radius:20px;
@@ -188,11 +211,11 @@ thead th{
   font-family:var(--font);
   font-size:11.5px;
   font-weight:600;
-  color:#3c4043;
+  color:var(--g600);
   text-transform:uppercase;
   letter-spacing:.7px;
-  background:#f1f3f4;
-  border-bottom:2px solid #dadce0;
+  background:var(--g100);
+  border-bottom:2px solid var(--g300);
   white-space:nowrap
 }
 tbody td{
@@ -201,17 +224,17 @@ tbody td{
   font-family:var(--font-text);
   font-size:14px;
   font-weight:400;
-  color:#111113;
+  color:var(--g800);
   vertical-align:middle;
   line-height:1.45
 }
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:#f0f4ff}
-tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:15px}
+tbody tr:hover td{background:var(--blue-light)}
+tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-size:15px}
 .mono{
   font-family:var(--font-text);
   font-size:13.5px;
-  color:#202124;
+  color:var(--g700);
   font-weight:400;
   letter-spacing:0
 }
@@ -226,7 +249,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
 .pc{background:#e6f4ea;color:#0d652d;font-weight:600}
 .no-data{
   text-align:center;padding:40px;
-  color:#5f6368;font-family:var(--font);
+  color:var(--g500);font-family:var(--font);
   font-size:15px;font-weight:400
 }
 
@@ -234,8 +257,8 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
 #skippedPanel button{font-family:var(--font)!important;font-size:13px!important}
 
 /* ── AGENT TABLE HIGHLIGHT COLUMNS ── */
-.th-highlight{background:#e8f0fe!important;color:#1557b0!important;font-weight:700!important}
-.td-highlight{background:#e8f0fe!important;font-weight:700!important;color:#1a56b0!important;font-size:14px!important}
+.th-highlight{background:var(--blue-light)!important;color:var(--blue-dark)!important;font-weight:700!important}
+.td-highlight{background:var(--blue-light)!important;font-weight:700!important;color:var(--blue-dark)!important;font-size:14px!important}
 
 /* ── SPINNER ── */
 .spinner-wrap{display:none;text-align:center;padding:40px;color:var(--g600);font-family:var(--font);font-size:15px;font-weight:400}
@@ -258,7 +281,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
 .pdf-menu{
   display:none;position:absolute;right:0;top:calc(100% + 6px);
   background:var(--surface);border:1px solid var(--g200);
-  border-radius:var(--radius);box-shadow:0 4px 16px rgba(60,64,67,.22);
+  border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.3);
   min-width:190px;z-index:999;overflow:hidden
 }
 .pdf-menu.open{display:block}
@@ -319,6 +342,60 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
   @page{margin:10mm 8mm;size:A4 landscape}
 }
 
+
+/* ══ MOBILE RESPONSIVE ════════════════════════════════════════ */
+@media(max-width:600px){
+  body{padding:12px 12px 48px}
+  .app-header{flex-wrap:wrap;gap:10px;padding-bottom:16px}
+  .app-header > div:last-child{width:100%;text-align:left;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+  #clockTime{font-size:15px!important}
+  #clockDate,#clockTZ{font-size:11px!important;margin-top:0!important}
+  .card-bd{padding:14px}
+  .card-hd{padding:12px 14px 10px}
+  /* credentials grid: stack all fields */
+  #credentialsSection > div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  #credentialsSection > div[style*="grid-template-columns:2fr"]{grid-template-columns:1fr!important}
+  /* connected controls */
+  #connectedControls{flex-direction:column;align-items:stretch!important}
+  #connectedControls select,#connectedControls button{width:100%}
+  /* filter buttons */
+  .filters-row{grid-template-columns:1fr!important}
+  /* quick select buttons wrap */
+  .qs-btn{font-size:11px;padding:5px 8px}
+  /* stats tiles: 2 cols on mobile */
+  .stats-row{grid-template-columns:1fr 1fr!important}
+  /* table headers: smaller */
+  thead th{font-size:10px!important;padding:8px 10px!important;letter-spacing:.3px!important}
+  tbody td{font-size:12px!important;padding:10px 10px!important}
+  /* tbl-hd: stack title and buttons */
+  .tbl-hd{flex-wrap:wrap!important;gap:8px!important}
+  .tbl-hd > div{flex:none!important;width:100%}
+  .tbl-hd > div:last-child{width:100%;display:flex;gap:6px;flex-wrap:wrap}
+  .tbl-hd > div:last-child button{flex:1;min-width:0;font-size:12px;padding:6px 8px}
+  /* analysis actions */
+  .analysis-hd{flex-wrap:wrap!important;gap:8px!important}
+  .analysis-actions{width:100%;flex-wrap:wrap}
+  .analysis-actions button{flex:1;min-width:0;font-size:12px}
+  /* btn-primary full width on mobile */
+  .btn-primary{width:100%;text-align:center}
+  /* period banner */
+  .period-banner{flex-direction:column!important;align-items:flex-start!important;gap:6px!important}
+  /* fetch progress */
+  #fetchProgress{padding:10px 12px}
+  /* pdf dropdown */
+  .pdf-menu{min-width:160px}
+  /* header dark mode button */
+  #darkModeBtn{padding:6px 10px!important;font-size:12px!important}
+}
+@media(max-width:400px){
+  .stats-row{grid-template-columns:1fr!important}
+  .stat .s-val{font-size:22px!important}
+}
+@media(min-width:601px) and (max-width:900px){
+  body{padding:16px 20px 48px}
+  #credentialsSection > div[style*="grid-template-columns:2fr"]{grid-template-columns:1fr 1fr!important}
+}
+
 </style>
 </head>
 <body>
@@ -333,10 +410,16 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
       <div class="app-title">Matrack Missed Call Tracker</div>
       <div class="app-sub">Live API · Auto-sync from MightyCall · Matrack Support Team</div>
     </div>
-    <div style="margin-left:auto;text-align:right;flex-shrink:0">
-      <div id="clockTime" style="font-family:var(--font);font-size:18px;font-weight:700;color:#111113;letter-spacing:-.2px;line-height:1.2;font-variant-numeric:tabular-nums">--:-- --</div>
-      <div id="clockDate" style="font-size:12px;color:#3c4043;margin-top:2px;font-family:var(--font-text)">---</div>
-      <div id="clockTZ"   style="font-size:11px;color:#80868b;margin-top:1px;font-family:var(--font)">---</div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;flex-shrink:0">
+      <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
+        style="font-family:var(--font);font-size:13px;font-weight:500;padding:7px 14px;border:1.5px solid var(--g300);border-radius:20px;background:var(--surface);color:var(--g700);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="darkModeIcon">🌙</span><span id="darkModeLabel">Dark</span>
+      </button>
+      <div style="text-align:right">
+        <div id="clockTime" style="font-family:var(--font);font-size:18px;font-weight:700;color:var(--g800);letter-spacing:-.2px;line-height:1.2;font-variant-numeric:tabular-nums">--:-- --</div>
+        <div id="clockDate" style="font-size:12px;color:var(--g600);margin-top:2px;font-family:var(--font-text)">---</div>
+        <div id="clockTZ"   style="font-size:11px;color:var(--g500);margin-top:1px;font-family:var(--font)">---</div>
+      </div>
     </div>
   </div>
 
@@ -350,47 +433,47 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
     <div class="card-bd">
       <!-- Status bar (shown when connected) -->
       <!-- Fetch progress widget -->
-      <div id="fetchProgress" style="display:none;margin-bottom:14px;padding:12px 16px;background:#f0f4ff;border:1.5px solid #c5d8f5;border-radius:8px">
+      <div id="fetchProgress" style="display:none;margin-bottom:14px;padding:12px 16px;background:var(--blue-light);border:1.5px solid var(--blue);opacity:.4;border-color:var(--blue);border-radius:8px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <div style="width:20px;height:20px;border:2.5px solid #c5d8f5;border-top-color:#1a73e8;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+          <div style="width:20px;height:20px;border:2.5px solid var(--g300);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
-            <div id="fpLabel" style="font-family:var(--font);font-size:13px;font-weight:600;color:#1557b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Connecting…</div>
-            <div id="fpSub"   style="font-family:var(--font-text);font-size:11.5px;color:#5f6368;margin-top:1px">Please wait</div>
+            <div id="fpLabel" style="font-family:var(--font);font-size:13px;font-weight:600;color:var(--blue-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Connecting…</div>
+            <div id="fpSub"   style="font-family:var(--font-text);font-size:11.5px;color:var(--g500);margin-top:1px">Please wait</div>
           </div>
-          <div id="fpPct" style="font-family:var(--font);font-size:19px;font-weight:700;color:#1a73e8;letter-spacing:-.5px;min-width:46px;text-align:right">0%</div>
+          <div id="fpPct" style="font-family:var(--font);font-size:19px;font-weight:700;color:var(--blue);letter-spacing:-.5px;min-width:46px;text-align:right">0%</div>
         </div>
-        <div style="background:#dde8fb;border-radius:99px;height:5px;overflow:hidden">
-          <div id="fpBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a73e8,#4285f4);border-radius:99px;transition:width .35s ease"></div>
+        <div style="background:var(--g200);border-radius:99px;height:5px;overflow:hidden">
+          <div id="fpBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),#4285f4);border-radius:99px;transition:width .35s ease"></div>
         </div>
       </div>
 
       <!-- Status bar (shown after sync completes) -->
-      <div id="apiStatus" style="display:none;margin-bottom:14px;padding:10px 14px;background:var(--g50);border-left:3px solid var(--blue);border-radius:6px;font-family:var(--font-text);font-size:13px;color:#202124;line-height:1.6"></div>
+      <div id="apiStatus" style="display:none;margin-bottom:14px;padding:10px 14px;background:var(--g50);border-left:3px solid var(--blue);border-radius:6px;font-family:var(--font-text);font-size:13px;color:var(--g700);line-height:1.6"></div>
 
       <!-- Credentials row (hidden when connected) -->
       <div id="credentialsSection">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div>
             <label class="f-label">Account API Key</label>
-            <input type="text" id="inputApiKey" placeholder="28c4b34e-5ab3-4983-..." style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:#fff;color:#111">
+            <input type="text" id="inputApiKey" placeholder="28c4b34e-5ab3-4983-..." style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:var(--surface);color:var(--g800)">
           </div>
           <div>
             <label class="f-label">Secret Key / User Key</label>
-            <input type="text" id="inputSecretKey" placeholder="Your user row key" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:#fff;color:#111">
+            <input type="text" id="inputSecretKey" placeholder="Your user row key" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;background:var(--surface);color:var(--g800)">
           </div>
         </div>
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:14px">
           <div>
             <label class="f-label">Proxy URL</label>
-            <input type="text" id="inputProxy" value="https://matrack-proxy.sayan-sieva.workers.dev" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;outline:none;background:#fff;color:#111">
+            <input type="text" id="inputProxy" value="https://matrack-proxy.sayan-sieva.workers.dev" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;outline:none;background:var(--surface);color:var(--g800)">
           </div>
           <div>
             <label class="f-label">🕐 Report Timezone</label>
-            <select id="tzSelect" onchange="applyTimezoneChange()" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:#fff;color:#111"></select>
+            <select id="tzSelect" onchange="applyTimezoneChange()" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:var(--surface);color:var(--g800)"></select>
           </div>
           <div>
             <label class="f-label">Auto-sync interval</label>
-            <select id="syncInterval" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:#fff;color:#111">
+            <select id="syncInterval" style="width:100%;padding:10px 13px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;outline:none;background:var(--surface);color:var(--g800)">
               <option value="0" selected>Manual only</option>
               <option value="30000">Every 30 sec</option>
               <option value="60000">Every 1 min</option>
@@ -405,8 +488,8 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
           <button class="btn-sm" id="btnTest" onclick="testConnection()" style="white-space:nowrap">🔍 Test Connection</button>
           <button class="btn-primary" id="btnConnect" onclick="apiConnect()" style="margin-top:0;white-space:nowrap">Connect &amp; Fetch</button>
           <div id="savedKeysNote" style="display:none;align-items:center;gap:8px;margin-left:4px">
-            <span style="font-family:var(--font-text);font-size:12px;color:#1e8e3e">&#10003; Keys saved on this device</span>
-            <button onclick="clearSavedKeys()" style="font-family:var(--font);font-size:11.5px;background:none;border:1px solid var(--g300);border-radius:4px;padding:2px 9px;cursor:pointer;color:var(--g500)">Clear</button>
+            <span style="font-family:var(--font-text);font-size:12px;color:var(--green)">&#10003; Keys saved on this device</span>
+            <button onclick="clearSavedKeys()" style="font-family:var(--font);font-size:11.5px;background:var(--surface);border:1px solid var(--g300);border-radius:4px;padding:2px 9px;cursor:pointer;color:var(--g500)">Clear</button>
           </div>
         </div>
 
@@ -414,12 +497,12 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
         <div id="testLogWrap" style="display:none;margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <span style="font-family:var(--font);font-size:12px;font-weight:600;color:var(--g600);text-transform:uppercase;letter-spacing:.5px">Connection Test Log</span>
-            <button id="btnCopyLog" onclick="copyTestLog()" style="font-family:var(--font);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;padding:3px 11px;background:#fff;border:1.5px solid var(--g300);border-radius:5px;cursor:pointer;color:var(--g700);transition:background .12s">
+            <button id="btnCopyLog" onclick="copyTestLog()" style="font-family:var(--font);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;padding:3px 11px;background:var(--surface);border:1.5px solid var(--g300);border-radius:5px;cursor:pointer;color:var(--g700);transition:background .12s">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Copy Log
             </button>
           </div>
-          <div id="testLog" style="background:#f8f9fa;border:1px solid var(--g200);border-radius:var(--radius);padding:12px 14px;font-family:var(--font-mono);font-size:12px;color:#202124;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.65"></div>
+          <div id="testLog" style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--radius);padding:12px 14px;font-family:var(--font-mono);font-size:12px;color:var(--g700);max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.65"></div>
         </div>
 
         <div style="font-family:var(--font-text);font-size:12px;color:var(--g500)">
@@ -430,8 +513,8 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
       <!-- Connected state controls (shown when connected) -->
       <div id="connectedControls" style="display:none;gap:10px;align-items:center;flex-wrap:wrap">
         <span id="connectedInfo" style="font-family:var(--font-text);font-size:13px;color:var(--g600)"></span>
-        <span id="tzPill" style="font-family:var(--font);font-size:12px;font-weight:500;background:#e8f0fe;color:#1557b0;border:1px solid #c5d8f5;padding:3px 10px;border-radius:12px">🕐 UTC</span>
-        <select id="syncIntervalConnected" onchange="updateSyncInterval(this.value)" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:#111;outline:none">
+        <span id="tzPill" style="font-family:var(--font);font-size:12px;font-weight:500;background:var(--blue-light);color:var(--blue-dark);border:1px solid var(--blue);padding:3px 10px;border-radius:12px">🕐 UTC</span>
+        <select id="syncIntervalConnected" onchange="updateSyncInterval(this.value)" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:var(--surface);color:var(--g800);outline:none">
           <option value="0" selected>Manual only</option>
           <option value="30000">Auto-sync: 30s</option>
           <option value="60000">Auto-sync: 1 min</option>
@@ -440,7 +523,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
           <option value="900000">Auto-sync: 15 min</option>
           <option value="1800000">Auto-sync: 30 min</option>
         </select>
-        <select id="tzSelectConnected" onchange="applyTimezoneChange()" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:#111;outline:none;max-width:220px"></select>
+        <select id="tzSelectConnected" onchange="applyTimezoneChange()" style="padding:7px 12px;border:1.5px solid var(--g300);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:var(--surface);color:var(--g800);outline:none;max-width:220px"></select>
         <button class="btn-sm" id="btnSync" onclick="apiSync()">🔄 Sync Now</button>
         <button class="btn-sm" onclick="apiDisconnect()" style="color:var(--red);border-color:var(--red)">Disconnect</button>
       </div>
@@ -460,8 +543,8 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
       <!-- Mode Toggle + Quick Select on same row -->
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div style="display:flex;gap:0;border:1.5px solid var(--g300);border-radius:8px;overflow:hidden;flex-shrink:0">
-          <button id="modeSingle" onclick="setMode('single')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--blue);color:#fff;transition:background .15s">Single Day</button>
-          <button id="modeRange" onclick="setMode('range')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--surface);color:var(--g700);transition:background .15s">Date Range</button>
+          <button id="modeSingle" onclick="setMode('single')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--blue);color:#fff;transition:background .15s;outline:none">Single Day</button>
+          <button id="modeRange" onclick="setMode('range')" style="font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border:none;cursor:pointer;background:var(--surface);color:var(--g700);transition:background .15s;outline:none">Date Range</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">
           <button class="qs-btn" onclick="applyPreset('1h')">Last 1 Hour</button>
@@ -521,7 +604,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
       <div style="font-family:var(--font-text);font-size:13px;color:var(--g500);margin-top:4px">This may take a moment for large date ranges</div>
     </div>
     <div class="spinner-wrap" id="spinner"><div class="spinner"></div><div style="font-family:var(--font);font-size:14px">Processing…</div></div>
-    <div class="period-banner" id="periodBanner"><span id="periodBannerText"></span><div id="syncBadge" style="display:none;align-items:center;gap:6px;background:#e6f4ea;border:1px solid #a8d5b5;padding:3px 12px;border-radius:20px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--green);flex-shrink:0"><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.4s infinite"></span><span id="syncBadgeText">LIVE</span></div></div>
+    <div class="period-banner" id="periodBanner"><span id="periodBannerText"></span><div id="syncBadge" style="display:none;align-items:center;gap:6px;background:var(--green-light);border:1px solid var(--green);padding:3px 12px;border-radius:20px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--green);flex-shrink:0"><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.4s infinite"></span><span id="syncBadgeText">LIVE</span></div></div>
 
     <!-- PDF-only header — sits at very top of print page -->
     <div class="pdf-header" style="display:none;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #dadce0">
@@ -530,10 +613,10 @@ tbody td strong{font-family:var(--font);font-weight:700;color:#111113;font-size:
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg>
         </div>
         <div>
-          <div style="font-family:var(--font);font-size:18px;font-weight:700;color:#202124">Matrack Missed Call Tracker — Report</div>
-          <div style="font-size:11px;color:#80868b;font-family:var(--font-text);margin-top:2px" id="pdfSubtitle"></div>
+          <div style="font-family:var(--font);font-size:18px;font-weight:700;color:var(--g700)">Matrack Missed Call Tracker — Report</div>
+          <div style="font-size:11px;color:var(--g500);font-family:var(--font-text);margin-top:2px" id="pdfSubtitle"></div>
         </div>
-        <div style="margin-left:auto;font-size:11px;color:#80868b;font-family:var(--font-mono)" id="pdfGenerated"></div>
+        <div style="margin-left:auto;font-size:11px;color:var(--g500);font-family:var(--font-mono)" id="pdfGenerated"></div>
       </div>
     </div>
 
@@ -1919,7 +2002,7 @@ Final Count: ${plural(r.connectedCount,'inbound connected call')}, ${plural(r.ne
     return`<tr>
       <td class="mono">${n}</td>
       <td><strong>${d.count}</strong></td>
-      <td style="font-size:13px;font-weight:500;color:#d93025">${lastMissedFull}</td>
+      <td style="font-size:13px;font-weight:500;color:var(--red)">${lastMissedFull}</td>
       <td>${pillsFromCalls(d.calls)}</td>
       <td style="font-size:12px;color:var(--g700)">${cleanP}</td>
       <td style="font-size:12px;color:var(--g700)">${biz}</td>
@@ -1970,11 +2053,11 @@ Final Count: ${plural(r.connectedCount,'inbound connected call')}, ${plural(r.ne
         const isConn = d.callbackType && d.callbackType.includes('connected');
         const statusPill = isConn
           ? `<span class="pill pc" style="font-weight:600">${d.callbackType}</span>`
-          : `<span class="pill" style="background:#fff3e0;color:#e65100;font-weight:600">${d.callbackType||'—'}</span>`;
+          : `<span class="pill" style="background:var(--yellow-light);color:var(--yellow-text);font-weight:600">${d.callbackType||'—'}</span>`;
         return `<tr>
           <td class="mono">${n}</td>
           <td><strong>${d.count}</strong></td>
-          <td style="font-size:13px;font-weight:500;color:#d93025">${missedFull}</td>
+          <td style="font-size:13px;font-weight:500;color:var(--red)">${missedFull}</td>
           <td style="font-size:13px;font-weight:500;color:#1e8e3e">${cbFull}</td>
           <td>${typePills}</td>
           <td>${statusPill}</td>
@@ -2391,6 +2474,42 @@ function exportCalledBackPdf() {
   iframe.contentDocument.close();
   iframe.onload = () => setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 700);
 }
+
+// ═══════════════════════════════════════════════════════
+// DARK MODE
+// ═══════════════════════════════════════════════════════
+(function initTheme() {
+  // Check saved preference, fallback to system preference
+  const saved = localStorage.getItem('matrack_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved ? saved === 'dark' : prefersDark;
+  applyTheme(isDark ? 'dark' : 'light', false);
+})();
+
+function applyTheme(theme, save = true) {
+  const isDark = theme === 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn   = document.getElementById('darkModeBtn');
+  const icon  = document.getElementById('darkModeIcon');
+  const label = document.getElementById('darkModeLabel');
+  if (icon)  icon.textContent  = isDark ? '☀️' : '🌙';
+  if (label) label.textContent = isDark ? 'Light' : 'Dark';
+  if (btn)   btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  if (save)  localStorage.setItem('matrack_theme', theme);
+}
+
+function toggleDarkMode() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Keep in sync if system theme changes while page is open
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('matrack_theme')) {
+    applyTheme(e.matches ? 'dark' : 'light', false);
+  }
+});
+
 </script>
 </body>
 </html>
