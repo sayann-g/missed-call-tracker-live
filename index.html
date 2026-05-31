@@ -396,6 +396,87 @@ tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-s
   #credentialsSection > div[style*="grid-template-columns:2fr"]{grid-template-columns:1fr 1fr!important}
 }
 
+/* ── TOOL LOGS MODAL ── */
+#toolLogsOverlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:9999;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(3px);
+}
+#toolLogsOverlay.open{display:flex}
+#toolLogsModal{
+  background:var(--surface);border-radius:var(--radius-lg);
+  box-shadow:0 8px 40px rgba(0,0,0,.3);
+  width:100%;max-width:860px;max-height:88vh;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.tlm-header{
+  padding:16px 20px;border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;gap:12px;flex-shrink:0
+}
+.tlm-header h3{font-family:var(--font);font-size:16px;font-weight:700;color:var(--g800);flex:1}
+.tlm-badge{font-family:var(--font);font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;background:var(--blue-light);color:var(--blue-dark)}
+.tlm-badge.has-err{background:var(--red-light);color:var(--red)}
+.tlm-toolbar{
+  padding:12px 20px;border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;
+  background:var(--g50)
+}
+.tlm-filter{
+  font-family:var(--font);font-size:11.5px;font-weight:500;
+  padding:5px 12px;border:1.5px solid var(--g300);border-radius:20px;
+  background:var(--surface);color:var(--g600);cursor:pointer;transition:all .15s
+}
+.tlm-filter:hover{border-color:var(--blue);color:var(--blue-dark);background:var(--blue-light)}
+.tlm-filter.active{border-color:var(--blue);color:var(--blue-dark);background:var(--blue-light);font-weight:600}
+.tlm-filter.err-f{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.tlm-filter.err-f.active{background:var(--red);color:#fff}
+.tlm-search{
+  font-family:var(--font-mono);font-size:12px;padding:6px 12px;
+  border:1.5px solid var(--g300);border-radius:6px;
+  background:var(--surface);color:var(--g800);outline:none;
+  flex:1;min-width:160px;transition:border-color .15s
+}
+.tlm-search:focus{border-color:var(--blue)}
+.tlm-btn{
+  font-family:var(--font);font-size:12px;font-weight:500;
+  padding:6px 14px;border:1.5px solid var(--g300);border-radius:6px;
+  background:var(--surface);color:var(--g600);cursor:pointer;transition:all .15s;
+  white-space:nowrap
+}
+.tlm-btn:hover{background:var(--g100)}
+.tlm-btn.danger{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.tlm-btn.danger:hover{background:var(--red);color:#fff}
+.tlm-body{flex:1;overflow-y:auto;font-family:var(--font-mono);font-size:12px;line-height:1.7;padding:0}
+.log-line{
+  display:flex;gap:10px;padding:6px 20px;border-bottom:1px solid var(--g100);
+  transition:background .1s;align-items:flex-start
+}
+.log-line:hover{background:var(--g50)}
+.log-line.ll-error{background:var(--red-light)!important;border-left:3px solid var(--red)}
+.log-line.ll-warn{background:var(--yellow-light)!important;border-left:3px solid #f9ab00}
+.log-line.ll-success{border-left:3px solid var(--green)}
+.log-line.ll-info{}
+.ll-ts{color:var(--g500);font-size:11px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.ll-level{font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.ll-level.ERROR{background:var(--red-light);color:var(--red)}
+.ll-level.WARN{background:var(--yellow-light);color:var(--yellow-text)}
+.ll-level.OK{background:var(--green-light);color:var(--green)}
+.ll-level.INFO{background:var(--blue-light);color:var(--blue-dark)}
+.ll-level.DEBUG{background:var(--g100);color:var(--g500)}
+.ll-msg{color:var(--g800);flex:1;word-break:break-word}
+.ll-cat{font-size:10px;color:var(--g500);background:var(--g100);padding:1px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.tlm-empty{padding:48px;text-align:center;color:var(--g500);font-family:var(--font);font-size:14px}
+.tlm-footer{
+  padding:10px 20px;border-top:1px solid var(--g200);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--g500);flex-shrink:0;background:var(--g50)
+}
+@media(max-width:600px){
+  #toolLogsModal{max-height:95vh;border-radius:var(--radius)}
+  .log-line{padding:5px 12px;gap:6px}
+  .ll-cat{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -411,6 +492,10 @@ tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-s
       <div class="app-sub">Live API · Auto-sync from MightyCall · Matrack Support Team</div>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:14px;flex-shrink:0">
+      <button onclick="openToolLogs()" title="View tool logs"
+        style="font-family:var(--font);font-size:13px;font-weight:500;padding:7px 14px;border:1.5px solid var(--g300);border-radius:20px;background:var(--surface);color:var(--g700);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap;position:relative">
+        <span>📋</span><span>Tool Logs</span><span id="logErrBadge" style="display:none;position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:#d93025;border-radius:50%"></span>
+      </button>
       <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
         style="font-family:var(--font);font-size:13px;font-weight:500;padding:7px 14px;border:1.5px solid var(--g300);border-radius:20px;background:var(--surface);color:var(--g700);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap">
         <span id="darkModeIcon">🌙</span><span id="darkModeLabel">Dark</span>
@@ -753,6 +838,35 @@ tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-s
     </div>
   </div>
 
+
+<!-- ═══ TOOL LOGS MODAL ═══ -->
+<div id="toolLogsOverlay" onclick="if(event.target===this)closeToolLogs()">
+  <div id="toolLogsModal">
+    <div class="tlm-header">
+      <span style="font-size:20px">📋</span>
+      <h3>Tool Logs</h3>
+      <span id="tlmBadge" class="tlm-badge">0 entries</span>
+      <button class="tlm-btn" onclick="closeToolLogs()" style="margin-left:8px">✕ Close</button>
+    </div>
+    <div class="tlm-toolbar">
+      <button class="tlm-filter active" data-f="all"    onclick="tlmSetFilter('all',this)">All</button>
+      <button class="tlm-filter"        data-f="INFO"   onclick="tlmSetFilter('INFO',this)">ℹ Info</button>
+      <button class="tlm-filter"        data-f="OK"     onclick="tlmSetFilter('OK',this)">✓ Success</button>
+      <button class="tlm-filter"        data-f="WARN"   onclick="tlmSetFilter('WARN',this)">⚠ Warn</button>
+      <button class="tlm-filter err-f active-able" data-f="ERROR" onclick="tlmSetFilter('ERROR',this)">✗ Errors</button>
+      <input  class="tlm-search" id="tlmSearch" placeholder="Search logs…" oninput="tlmRender()">
+      <button class="tlm-btn" onclick="tlmCopy()">⎘ Copy</button>
+      <button class="tlm-btn" onclick="tlmDownload()">↓ Download</button>
+      <button class="tlm-btn danger" onclick="tlmClear()" style="margin-left:auto">🗑 Clear</button>
+    </div>
+    <div class="tlm-body" id="tlmBody"></div>
+    <div class="tlm-footer">
+      <span id="tlmFooterLeft">No logs yet</span>
+      <span>Auto-scrolls to latest · Click any row to select · Logs persist in session</span>
+    </div>
+  </div>
+</div>
+
 </div>
 <script>
 // ═══════════════════════════════════════════════════════
@@ -836,13 +950,28 @@ let currentMode = 'single';
 // PROXY FETCH (identical auth to main dashboard)
 // ═══════════════════════════════════════════════════════
 async function proxyFetch(path, params = {}) {
+  const _paramStr = Object.keys(params).length ? ' params:' + JSON.stringify(params) : '';
+  ToolLog.debug('FETCH', 'GET /api' + path + _paramStr);
   const url = new URL(apiCFG.proxy + '/api' + path);
   Object.entries(params).forEach(([k,v]) => { if(v!==undefined&&v!=='') url.searchParams.set(k,v); });
+  const _t0 = Date.now();
   const res = await fetch(url.toString(), {
     headers: { 'Accept':'application/json', 'x-api-key': apiCFG.apiKey, 'x-secret-key': apiCFG.secretKey }
   });
-  if (!res.ok) { const t = await res.text().catch(()=>''); throw new Error(`HTTP ${res.status}: ${t.substring(0,120)}`); }
-  return res.json();
+  const _ms = Date.now() - _t0;
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    ToolLog.error('FETCH', 'HTTP ' + res.status + ' GET /api' + path + ' (' + _ms + 'ms) — ' + t.substring(0, 200));
+    throw new Error('HTTP ' + res.status + ': ' + t.substring(0, 120));
+  }
+  const _json = await res.json();
+  const _total   = _json?.data?.total;
+  const _records = _json?.data?.calls?.length;
+  const _info    = _total != null
+    ? ' — ' + (_records ?? 0) + ' records (total available: ' + _total + ')'
+    : (_records != null ? ' — ' + _records + ' records' : '');
+  ToolLog.ok('FETCH', 'HTTP ' + res.status + ' GET /api' + path + ' (' + _ms + 'ms)' + _info);
+  return _json;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -943,6 +1072,7 @@ function _subSec(utcStr) {
 }
 
 async function fetchAllCalls() {
+  ToolLog.info('FETCH', 'fetchAllCalls started');
   const { startUtc, endUtc } = getDateRange();
 
   // Split into 7-day chunks to avoid MightyCall's server-side skip limit (~9000 rows)
@@ -966,14 +1096,18 @@ async function fetchAllCalls() {
     const first = await proxyFetch('/calls', { startUtc: chunk.start, endUtc: chunk.end, pageSize, skip });
     const total = first?.data?.total || 0;
     const firstItems = first?.data?.calls || [];
+    ToolLog.info('FETCH', `Chunk ${done+1}/${chunks.length} — ${chunk.start} → ${chunk.end} — total available: ${total}`);
     all = all.concat(firstItems);
     skip += firstItems.length;
+    let page = 1;
     while (skip < total && firstItems.length > 0) {
+      page++;
       const resp = await proxyFetch('/calls', { startUtc: chunk.start, endUtc: chunk.end, pageSize, skip });
       const items = resp?.data?.calls || [];
       if (!items.length) break;
       all = all.concat(items);
       skip += items.length;
+      ToolLog.debug('FETCH', `  Page ${page} — fetched ${items.length} records, running total: ${all.length}`);
     }
     done++;
     const pct = Math.round((done / chunks.length) * 70) + 2;
@@ -988,12 +1122,15 @@ async function fetchAllCalls() {
 
   // Deduplicate by call ID
   const seen = new Set();
-  return all.filter(c => {
+  const deduped = all.filter(c => {
     const id = c.id || c.requestGuid;
     if (!id) return true;
     if (seen.has(id)) return false;
     seen.add(id); return true;
   });
+  const dupes = all.length - deduped.length;
+  ToolLog.ok('FETCH', `fetchAllCalls complete — ${deduped.length.toLocaleString()} calls fetched across ${chunks.length} chunk(s)${dupes > 0 ? ', ' + dupes + ' duplicates removed' : ''}`);
+  return deduped;
 }
 
 // ── Option B: TZ offset cache — calculated once per hour-bucket, not per call ──
@@ -1107,6 +1244,7 @@ async function normaliseCalls(apiCalls) {
 // CONNECT
 // ═══════════════════════════════════════════════════════
 async function apiConnect() {
+  ToolLog.info('AUTH', 'Connect & Fetch triggered — proxy: ' + (apiCFG.proxy||'not set'));
   const key    = document.getElementById('inputApiKey').value.trim();
   const secret = document.getElementById('inputSecretKey').value.trim();
   const proxy  = document.getElementById('inputProxy').value.trim();
@@ -1141,6 +1279,7 @@ async function apiConnect() {
 }
 
 function showConnectedState() {
+  ToolLog.ok('AUTH', 'Connected successfully — MightyCall API authenticated');
   document.getElementById('credentialsSection').style.display = 'none';
   document.getElementById('connectedControls').style.display  = 'flex';
   document.getElementById('syncBadge').style.display          = 'flex';
@@ -1150,6 +1289,7 @@ function showConnectedState() {
 }
 
 function apiDisconnect() {
+  ToolLog.info('AUTH', 'Disconnected from MightyCall');
   isConnected = false;
   clearInterval(syncTimer); syncTimer = null;
   csvData = [];
@@ -1176,6 +1316,7 @@ function apiDisconnect() {
 // SYNC — fetch → normalise → store → auto-generate report
 // ═══════════════════════════════════════════════════════
 async function apiSync() {
+  ToolLog.info('SYNC', 'Manual sync triggered');
   const btn = document.getElementById('btnSync');
   btn.textContent = '⏳ Syncing…'; btn.disabled = true;
   hideApiErr();
@@ -1226,11 +1367,13 @@ function updateSyncInterval(val) {
 }
 
 function startAutoSync(ms) {
+  ToolLog.info('SYNC', 'Auto-sync ' + (ms>0 ? 'started — every ' + (ms/1000) + 's' : 'stopped'));
   clearInterval(syncTimer); syncTimer = null;
   if (ms > 0) syncTimer = setInterval(() => { if(isConnected) apiSync(); }, ms);
 }
 
-function showApiErr(msg) { const e=document.getElementById('apiError'); e.textContent=msg; e.style.display='block'; setTimeout(()=>e.style.display='none',6000); }
+function showApiErr(msg) {
+  ToolLog.error('API', msg); const e=document.getElementById('apiError'); e.textContent=msg; e.style.display='block'; setTimeout(()=>e.style.display='none',6000); }
 function hideApiErr()    { document.getElementById('apiError').style.display='none'; }
 
 // ── Timezone selector — populated on load, auto-detects browser TZ ───────────
@@ -1367,6 +1510,7 @@ function startClock() {
 
 // ── Test connection with detailed log ─────────────────
 async function testConnection() {
+  ToolLog.info('AUTH', 'Testing connection to proxy: ' + apiCFG.proxy);
   const key    = document.getElementById('inputApiKey').value.trim();
   const secret = document.getElementById('inputSecretKey').value.trim();
   const proxy  = document.getElementById('inputProxy').value.trim() || 'http://localhost:3333';
@@ -1400,9 +1544,11 @@ async function testConnection() {
     append(`[${ts()}] GET /ping …`);
     const p = await proxyFetch('/ping');
     append(`[${ts()}] ✓ /ping OK — response: ${JSON.stringify(p)}`);
+    ToolLog.ok('AUTH', '/ping OK — proxy is reachable: ' + JSON.stringify(p));
   } catch(e) {
     append(`[${ts()}] ✗ /ping FAILED — ${e.message}`);
     append(`[${ts()}] → Is node proxy.js running? Check the terminal window.`);
+    ToolLog.error('AUTH', '/ping FAILED — ' + e.message);
     btn.textContent = '🔍 Test'; btn.disabled = false; return;
   }
 
@@ -1428,6 +1574,7 @@ async function testConnection() {
     const total = r?.data?.total ?? '?';
     const items = r?.data?.calls || [];
     append(`[${ts()}] ✓ /calls OK — total today: ${total}, returned: ${items.length}`);
+    ToolLog.ok('AUTH', 'API /calls test OK — MightyCall returned call data successfully');
     if (items.length) {
       append(`[${ts()}]   Sample call: ${items[0].direction} | ${items[0].callStatus} | ${items[0].dateTimeUtc}`);
       append(`[${ts()}]   → This UTC time will be converted to: ${fmtInTZ(new Date(items[0].dateTimeUtc))} (${tzLabel})`);
@@ -1462,10 +1609,12 @@ async function testConnection() {
     }
   } catch(e) {
     append(`[${ts()}] ✗ /calls FAILED — ${e.message}`);
+    ToolLog.error('AUTH', '/calls test FAILED — ' + e.message);
   }
 
   append('');
   append(`[${ts()}] ── Test Complete ──`);
+  ToolLog.ok('AUTH', 'Connection test complete — proxy and MightyCall API both verified');
   btn.textContent = '🔍 Test'; btn.disabled = false;
 }
 
@@ -1918,6 +2067,7 @@ function fmtSec(sec){
 }
 
 function renderReport(r){
+  ToolLog.ok('RENDER', 'Report rendered — ' + (r.totalMissedContacts||0) + ' missed contacts, ' + (r.needFollowUpCount||0) + ' need follow-up, ' + (r.calledBackCount||0) + ' called back');
   const fmtDateStr=ds=>new Date(ds+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const fmtDate=r.isRange?`${fmtDateStr(r.dateFrom)} – ${fmtDateStr(r.dateTo)}`:fmtDateStr(r.date);
   const pb=document.getElementById('periodBanner');
@@ -2177,6 +2327,7 @@ function copyAgentTable(){
 
 // ── AGENT TABLE EXPORT PDF (hidden iframe — no popup) ───────────────────────
 function exportAgentPdf(orientation){
+  ToolLog.info('EXPORT', 'exportAgentPdf triggered');
   const dateStr=document.getElementById('agentExportDate').textContent||'';
   const tbl=document.getElementById('agentTable');
   const thEls=Array.from(tbl.querySelectorAll('thead th'));
@@ -2252,6 +2403,7 @@ function exportAgentPdf(orientation){
 
 // ── AGENT TABLE EXPORT IMAGE (html2canvas — no popup, exact appearance) ──────
 async function exportAgentImage(){
+  ToolLog.info('EXPORT', 'exportAgentImage triggered');
   const dateStr=document.getElementById('agentExportDate').textContent||'';
 
   if(typeof html2canvas==='undefined'){
@@ -2306,6 +2458,7 @@ async function exportAgentImage(){
 // dropdown toggles removed
 
 function exportPdf(){
+  ToolLog.info('EXPORT', 'exportPdf triggered');
   const meta=window._pdfMeta||{};
   const subtitle=document.getElementById('pdfSubtitle');
   const generated=document.getElementById('pdfGenerated');
@@ -2315,6 +2468,7 @@ function exportPdf(){
 }
 
 function exportCallLogPdf() {
+  ToolLog.info('EXPORT', 'exportCallLogPdf triggered');
   const meta = window._callLogMeta || {};
   const calls = meta.calls || [];
   const dateLabel = meta.dateLabel || '';
@@ -2394,6 +2548,7 @@ function showErr(msg){errorMsg.textContent=msg;errorMsg.style.display='block';se
 function hideErr(){errorMsg.style.display='none'}
 
 function exportCalledBackPdf() {
+  ToolLog.info('EXPORT', 'exportCalledBackPdf triggered');
   const meta = window._pdfMeta || {};
   const fmtDate = meta.fmtDate || '';
   const genTime = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
@@ -2474,6 +2629,166 @@ function exportCalledBackPdf() {
   iframe.contentDocument.close();
   iframe.onload = () => setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 700);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// TOOL LOGS SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+const ToolLog = (function() {
+  let entries = [];
+  let tlmFilter = 'all';
+
+  const CATS = {
+    API:      'API',
+    AUTH:     'Auth',
+    FETCH:    'Fetch',
+    FILTER:   'Filter',
+    RENDER:   'Render',
+    EXPORT:   'Export',
+    SYNC:     'Auto-Sync',
+    ANALYSIS: 'Analysis',
+    UI:       'UI',
+    SYSTEM:   'System',
+    ERROR:    'Error',
+  };
+
+  function ts() {
+    return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  }
+
+  function add(level, cat, msg) {
+    const entry = { ts: ts(), level, cat, msg, time: Date.now() };
+    entries.unshift(entry);
+    // Red dot on button if error
+    if (level === 'ERROR' || level === 'WARN') {
+      const badge = document.getElementById('logErrBadge');
+      if (badge) badge.style.display = 'block';
+    }
+    // If modal is open, re-render
+    const overlay = document.getElementById('toolLogsOverlay');
+    if (overlay && overlay.classList.contains('open')) tlmRender();
+    return entry;
+  }
+
+  return {
+    info:  (cat, msg) => add('INFO',  CATS[cat]||cat, msg),
+    ok:    (cat, msg) => add('OK',    CATS[cat]||cat, msg),
+    warn:  (cat, msg) => add('WARN',  CATS[cat]||cat, msg),
+    error: (cat, msg) => add('ERROR', CATS[cat]||cat, msg),
+    debug: (cat, msg) => add('DEBUG', CATS[cat]||cat, msg),
+    all: () => entries,
+    clear: () => { entries = []; },
+    CATS,
+  };
+})();
+
+// ── Modal controls ────────────────────────────────────────────────
+function openToolLogs() {
+  document.getElementById('toolLogsOverlay').classList.add('open');
+  document.getElementById('logErrBadge').style.display = 'none';
+  tlmRender();
+  // scroll to top (newest)
+  setTimeout(() => { document.getElementById('tlmBody').scrollTop = 0; }, 50);
+}
+
+function closeToolLogs() {
+  document.getElementById('toolLogsOverlay').classList.remove('open');
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeToolLogs();
+});
+
+let _tlmFilter = 'all';
+
+function tlmSetFilter(f, btn) {
+  _tlmFilter = f;
+  document.querySelectorAll('.tlm-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  tlmRender();
+}
+
+function tlmRender() {
+  const body    = document.getElementById('tlmBody');
+  const badge   = document.getElementById('tlmBadge');
+  const footer  = document.getElementById('tlmFooterLeft');
+  const search  = (document.getElementById('tlmSearch').value || '').toLowerCase();
+  const all     = ToolLog.all();
+
+  let filtered = all;
+  if (_tlmFilter !== 'all') filtered = filtered.filter(e => e.level === _tlmFilter);
+  if (search) filtered = filtered.filter(e =>
+    e.msg.toLowerCase().includes(search) ||
+    e.cat.toLowerCase().includes(search) ||
+    e.level.toLowerCase().includes(search)
+  );
+
+  const errCount = all.filter(e => e.level === 'ERROR').length;
+  badge.textContent = all.length + ' entries' + (errCount ? ' · ' + errCount + ' errors' : '');
+  badge.className   = 'tlm-badge' + (errCount ? ' has-err' : '');
+
+  if (!filtered.length) {
+    body.innerHTML = '<div class="tlm-empty">' +
+      (all.length === 0 ? 'No logs yet — use the tool to generate activity.' :
+       'No entries match the current filter.') + '</div>';
+    footer.textContent = '0 entries shown';
+    return;
+  }
+
+  footer.textContent = filtered.length + ' of ' + all.length + ' entries shown';
+
+  body.innerHTML = filtered.map(e => {
+    const cls = e.level === 'ERROR' ? 'll-error' :
+                e.level === 'WARN'  ? 'll-warn'  :
+                e.level === 'OK'    ? 'll-success': 'll-info';
+    return '<div class="log-line ' + cls + '">' +
+      '<span class="ll-ts">' + e.ts + '</span>' +
+      '<span class="ll-level ' + e.level + '">' + e.level + '</span>' +
+      '<span class="ll-cat">' + e.cat + '</span>' +
+      '<span class="ll-msg">' + escHtml(e.msg) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function tlmCopy() {
+  const lines = ToolLog.all().map(e =>
+    '[' + e.ts + '] [' + e.level.padEnd(5) + '] [' + e.cat + '] ' + e.msg
+  ).join('\n');
+  navigator.clipboard.writeText(lines || 'No logs.').then(() => {
+    const btn = document.querySelector('.tlm-btn[onclick="tlmCopy()"]');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => alert(lines || 'No logs.'));
+}
+
+function tlmDownload() {
+  const lines = ToolLog.all().map(e =>
+    '[' + e.ts + '] [' + e.level.padEnd(5) + '] [' + e.cat + '] ' + e.msg
+  ).join('\n');
+  const blob = new Blob([lines || 'No logs.'], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'matrack-tool-logs-' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function tlmClear() {
+  if (!confirm('Clear all tool logs?')) return;
+  ToolLog.clear();
+  tlmRender();
+}
+
+// ── Log startup ───────────────────────────────────────────────────
+ToolLog.info('SYSTEM', 'Matrack Missed Call Tracker loaded');
+ToolLog.info('SYSTEM', 'Browser: ' + navigator.userAgent.split(' ').slice(-2).join(' '));
+ToolLog.info('SYSTEM', 'Timezone: ' + Intl.DateTimeFormat().resolvedOptions().timeZone);
 
 // ═══════════════════════════════════════════════════════
 // DARK MODE
