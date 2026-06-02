@@ -1165,6 +1165,19 @@ async function normaliseCalls(apiCalls) {
   const result = [];
   const total  = apiCalls.length;
   const cleanPhone = p => '+' + String(p).replace(/\D/g,'');
+  // Format phone for display: +1 XXX XXX XXXX (US numbers) or +XX... (international)
+  const fmtPhone = p => {
+    if (!p) return p;
+    const digits = String(p).replace(/\D/g,'');
+    if (digits.length === 11 && digits[0] === '1') {
+      return '+1 ' + digits.slice(1,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7);
+    }
+    if (digits.length === 10) {
+      return '+1 ' + digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6);
+    }
+    // International or non-standard — just return with + prefix
+    return '+' + digits;
+  };
   const isExternal = p => p && String(p).replace(/\D/g,'').length >= 10;
 
   for (let i = 0; i < total; i += BATCH) {
@@ -1226,7 +1239,7 @@ async function normaliseCalls(apiCalls) {
 
       if (!CallStartTime || !ContactNumber) continue;
 
-      const o = { Direction, Result, ContactNumber, Owner, Participants,
+      const o = { Direction, Result, ContactNumber: fmtPhone(ContactNumber), Owner, Participants,
                   BusinessNumberLabel, TotalSeconds, CallStartTime };
       o._dtObj = parseDT(CallStartTime) || null;
       o._uid   = c.id || Math.random().toString(36);
@@ -1629,12 +1642,13 @@ async function testConnection() {
         // Show what ContactNumber we would extract
         const isExt = p => p && String(p).replace(/\D/g,'').length >= 10;
         const clean = p => p ? '+' + String(p).replace(/\D/g,'') : '';
+        const fmt = p => { if(!p)return p; const d=String(p).replace(/\D/g,''); if(d.length===11&&d[0]==='1')return'+1 '+d.slice(1,4)+' '+d.slice(4,7)+' '+d.slice(7); if(d.length===10)return'+1 '+d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6); return'+'+d; };
         let cn = '';
         if (missedCall.caller?.phone && isExt(missedCall.caller.phone)) cn = clean(missedCall.caller.phone);
         else if (missedCall.caller?.name && isExt(missedCall.caller.name.replace(/\D/g,''))) cn = clean(missedCall.caller.name);
         else if (missedCall.called?.length) { const e = missedCall.called.find(p=>p.phone&&isExt(p.phone)); if(e) cn=clean(e.phone); }
         if (!cn && missedCall.caller?.extension && isExt(missedCall.caller.extension)) cn = clean(missedCall.caller.extension);
-        append(`[${ts()}]   → Extracted ContactNumber: "${cn || 'EMPTY — cannot group this call!'}"`);
+        append(`[${ts()}]   → Extracted ContactNumber: "${cn ? fmt(cn) : 'EMPTY — cannot group this call!'}"`);
       } else {
         append(`[${ts()}]   No Missed calls in first 100 today — try a wider date range`);
       }
