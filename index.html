@@ -806,7 +806,7 @@ tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-s
     <div class="tbl-card" id="cbCard">
       <div class="tbl-hd" style="flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <h3>Call Logs for the Selected Date and Times</h3>
+          <h3>Call Logs for the Selected Date and Time Range</h3>
           <span class="badge blue" id="cbBadge">0 calls</span>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -816,12 +816,12 @@ tbody td strong{font-family:var(--font);font-weight:700;color:var(--g800);font-s
       <div style="overflow-x:auto">
         <table id="cbTable">
           <thead><tr>
+            <th>Contact Number</th>
             <th>Date &amp; Time</th>
             <th>Direction</th>
-            <th>Contact Number</th>
-            <th>Business Line</th>
             <th>Result</th>
             <th>Duration</th>
+            <th>Business Line</th>
             <th>Agent / Owner</th>
           </tr></thead>
           <tbody id="cbBody"></tbody>
@@ -931,6 +931,7 @@ function toast(msg, type) {
   if (note) note.style.display = 'flex';
 })();
 let csvData = [];          // normalised call rows — same shape as CSV tool
+let _bizLineMap = {};      // phone number → label, e.g. { '+19255000071': 'Sales Line' }
 // csvTimezone is used throughout the inherited report functions for banner/PDF/analysis text
 // We make it a live getter so it always reflects the currently selected timezone
 Object.defineProperty(window, 'csvTimezone', {
@@ -1209,7 +1210,10 @@ async function normaliseCalls(apiCalls) {
 
       // B: skip Participants (heavy join, not needed for analysis)
       const Participants      = '';
-      const BusinessNumberLabel = c.businessNumber || '';
+      const rawBizNum         = c.businessNumber ? '+' + String(c.businessNumber).replace(/\D/g,'') : '';
+      const BusinessNumberLabel = (rawBizNum && _bizLineMap[rawBizNum])
+        ? _bizLineMap[rawBizNum]
+        : (c.businessNumberLabel || c.businessNumber || '');
       const durMs             = parseInt(c.duration||0);
       const TotalSeconds      = String(durMs > 1000 ? Math.round(durMs/1000) : durMs);
 
@@ -1272,6 +1276,30 @@ async function apiConnect() {
 
   isConnected = true;
   showConnectedState();
+
+  // Fetch business phone numbers to build label map (number → label)
+  // Correct endpoint per MightyCall v4 API: GET /phonenumbers
+  // Response: { data: { phoneNumbers: [{ number, label, description }, ...] } }
+  try {
+    const blResp = await proxyFetch('/phonenumbers');
+    const lines  = blResp?.data?.phoneNumbers || blResp?.data?.lines || blResp?.data || [];
+    _bizLineMap  = {};
+    (Array.isArray(lines) ? lines : []).forEach(bl => {
+      const num   = bl.number || bl.phone || bl.phoneNumber || '';
+      const label = bl.label  || bl.description || bl.name   || '';
+      if (num) {
+        const clean = '+' + String(num).replace(/\D/g, '');
+        // Use label if set, otherwise use the formatted number itself
+        _bizLineMap[clean] = label || clean;
+      }
+    });
+    const count = Object.keys(_bizLineMap).length;
+    ToolLog.ok('FETCH', 'Phone numbers loaded — ' + count + ' number(s): ' + JSON.stringify(_bizLineMap));
+  } catch(e) {
+    ToolLog.warn('FETCH', 'Could not fetch phone numbers — labels will fall back to numbers (' + e.message + ')');
+    _bizLineMap = {};
+  }
+
   await apiSync();
 
   const interval = parseInt(document.getElementById('syncInterval').value);
@@ -1291,6 +1319,7 @@ function showConnectedState() {
 function apiDisconnect() {
   ToolLog.info('AUTH', 'Disconnected from MightyCall');
   isConnected = false;
+  _bizLineMap  = {};
   clearInterval(syncTimer); syncTimer = null;
   csvData = [];
   document.getElementById('credentialsSection').style.display = 'block';
@@ -1513,7 +1542,7 @@ async function testConnection() {
   ToolLog.info('AUTH', 'Testing connection to proxy: ' + apiCFG.proxy);
   const key    = document.getElementById('inputApiKey').value.trim();
   const secret = document.getElementById('inputSecretKey').value.trim();
-  const proxy  = document.getElementById('inputProxy').value.trim() || 'http://localhost:3333';
+  const proxy  = document.getElementById('inputProxy').value.trim() || 'https://matrack-proxy.sayan-sieva.workers.dev';
   if (!key || !secret) { showApiErr('Enter both keys before testing.'); return; }
 
   // Temporarily set so proxyFetch works
@@ -1539,26 +1568,30 @@ async function testConnection() {
   append(`[${ts()}] Timezone   : ${tzLabel}`);
   append('');
 
-  // 1. Ping
+  // 1. Ping — direct fetch to worker /ping (not via proxyFetch which adds /api prefix)
+  let pingOk = false, teamOk = false, callsOk = false;
   try {
-    append(`[${ts()}] GET /ping …`);
-    const p = await proxyFetch('/ping');
-    append(`[${ts()}] ✓ /ping OK — response: ${JSON.stringify(p)}`);
-    ToolLog.ok('AUTH', '/ping OK — proxy is reachable: ' + JSON.stringify(p));
+    append(`[${ts()}] GET /health …`);
+    const res = await fetch(proxy + '/health', { headers: { 'x-api-key': key, 'x-secret-key': secret } });
+    const p = await res.json().catch(() => ({}));
+    append(`[${ts()}] ✓ Worker reachable — KV: ${p.kvConnected ? 'Connected' : 'Not connected'}`);
+    ToolLog.ok('AUTH', '/health OK — worker reachable');
+    pingOk = true;
   } catch(e) {
     append(`[${ts()}] ✗ /ping FAILED — ${e.message}`);
-    append(`[${ts()}] → Is node proxy.js running? Check the terminal window.`);
+    append(`[${ts()}] → Check that the Cloudflare Worker is deployed and the proxy URL is correct.`);
     ToolLog.error('AUTH', '/ping FAILED — ' + e.message);
-    btn.textContent = '🔍 Test'; btn.disabled = false; return;
+    // Don't return — still try /team and /calls so we get full diagnostic info
   }
 
-  // 2. Team
+  // 2. Team — via proxyFetch (goes through /api/team → MightyCall /v4/api/team)
   try {
     append(`[${ts()}] GET /team …`);
     const t = await proxyFetch('/team');
     const users = t?.data?.users || t?.users || [];
     append(`[${ts()}] ✓ /team OK — ${users.length} users found`);
     if (users.length) append(`[${ts()}]   Users: ${users.map(u=>u.fullName||u.id).slice(0,5).join(', ')}`);
+    teamOk = true;
   } catch(e) {
     append(`[${ts()}] ✗ /team FAILED — ${e.message}`);
     append(`[${ts()}] → Check that both API Key and Secret Key are correct.`);
@@ -1575,6 +1608,7 @@ async function testConnection() {
     const items = r?.data?.calls || [];
     append(`[${ts()}] ✓ /calls OK — total today: ${total}, returned: ${items.length}`);
     ToolLog.ok('AUTH', 'API /calls test OK — MightyCall returned call data successfully');
+    callsOk = true;
     if (items.length) {
       append(`[${ts()}]   Sample call: ${items[0].direction} | ${items[0].callStatus} | ${items[0].dateTimeUtc}`);
       append(`[${ts()}]   → This UTC time will be converted to: ${fmtInTZ(new Date(items[0].dateTimeUtc))} (${tzLabel})`);
@@ -1609,12 +1643,37 @@ async function testConnection() {
     }
   } catch(e) {
     append(`[${ts()}] ✗ /calls FAILED — ${e.message}`);
+    callsOk = false;
     ToolLog.error('AUTH', '/calls test FAILED — ' + e.message);
   }
 
+  // ── Summary ──
+  const allOk = pingOk && teamOk && callsOk;
   append('');
-  append(`[${ts()}] ── Test Complete ──`);
-  ToolLog.ok('AUTH', 'Connection test complete — proxy and MightyCall API both verified');
+  append(`[${ts()}] ─────────────────────────────────`);
+  append(`[${ts()}] TEST RESULT SUMMARY`);
+  append(`[${ts()}] ─────────────────────────────────`);
+  append(`[${ts()}]   Worker /health : ${pingOk  ? '✓ PASS' : '✗ FAIL'}`);
+  append(`[${ts()}]   MightyCall /team : ${teamOk  ? '✓ PASS' : '✗ FAIL'}`);
+  append(`[${ts()}]   MightyCall /calls: ${callsOk ? '✓ PASS' : '✗ FAIL'}`);
+  append(`[${ts()}] ─────────────────────────────────`);
+  if (allOk) {
+    append(`[${ts()}] ✅ ALL TESTS PASSED — Ready to use`);
+    ToolLog.ok('AUTH', 'All connection tests passed');
+  } else if (pingOk && (teamOk || callsOk)) {
+    append(`[${ts()}] ⚠ PARTIAL — Worker OK but some API calls failed`);
+    append(`[${ts()}]   → Check API Key and Secret Key are correct`);
+    ToolLog.warn('AUTH', 'Partial pass — worker reachable but API errors');
+  } else if (!pingOk) {
+    append(`[${ts()}] ✗ FAILED — Worker unreachable`);
+    append(`[${ts()}]   → Verify the Cloudflare Worker is deployed`);
+    append(`[${ts()}]   → Check proxy URL: ${proxy}`);
+    ToolLog.error('AUTH', 'Connection test failed — worker unreachable');
+  } else {
+    append(`[${ts()}] ✗ FAILED — Check API Key and Secret Key`);
+    ToolLog.error('AUTH', 'Connection test failed');
+  }
+  append(`[${ts()}] ─────────────────────────────────`);
   btn.textContent = '🔍 Test'; btn.disabled = false;
 }
 
@@ -1691,7 +1750,13 @@ function applyPreset(preset) {
   };
   const subMonths = (dateStr, n) => {
     const d = new Date(dateStr + 'T12:00:00Z');
-    d.setUTCMonth(d.getUTCMonth() - n);
+    const targetMonth = d.getUTCMonth() - n;
+    d.setUTCDate(1); // set to 1st to avoid overflow during month change
+    d.setUTCMonth(targetMonth);
+    // Clamp to last day of target month if original day exceeds it
+    const origDay = new Date(dateStr + 'T12:00:00Z').getUTCDate();
+    const lastDay  = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    d.setUTCDate(Math.min(origDay, lastDay));
     return d.toISOString().split('T')[0];
   };
 
@@ -2240,15 +2305,15 @@ Final Count: ${plural(r.connectedCount,'inbound connected call')}, ${plural(r.ne
           <td class="mono">${c.ContactNumber||'—'}</td>
           <td style="white-space:nowrap;font-family:var(--font-text);font-size:13px">${dt}</td>
           <td>${dirPill(c.Direction)}</td>
-          <td style="font-size:13px;color:var(--g600)">${c.BusinessNumberLabel||'—'}</td>
           <td>${resultPill(c.Result)}</td>
           <td style="font-size:13px;color:var(--g600)">${durFmt(c.TotalSeconds)}</td>
+          <td style="font-size:13px;color:var(--g600)">${c.BusinessNumberLabel||'—'}</td>
           <td style="font-size:13px;color:var(--g700)">${c.Owner||'—'}</td>
         </tr>`;
       }).join('');
   document.getElementById('cbCard').style.display = 'block';
   // Store for PDF export
-  window._callLogMeta = { title: 'Call Logs for the Selected Date and Times', dateLabel: fmtDate, calls: sortedCalls };
+  window._callLogMeta = { title: 'Call Logs for the Selected Date and Time Range', dateLabel: fmtDate, calls: sortedCalls };
 
 
   document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
@@ -2489,9 +2554,9 @@ function exportCallLogPdf() {
       <td style="font-family:monospace">${c.ContactNumber||'—'}</td>
       <td style="white-space:nowrap">${dt}</td>
       <td>${dirPill(c.Direction)}</td>
-      <td>${c.BusinessNumberLabel||'—'}</td>
       <td>${resPill(c.Result)}</td>
       <td>${durFmt(c.TotalSeconds)}</td>
+      <td>${c.BusinessNumberLabel||'—'}</td>
       <td>${c.Owner||'—'}</td>
     </tr>`;
   }).join('');
@@ -2520,14 +2585,14 @@ function exportCallLogPdf() {
     <div class="hdr">
       <div class="hdr-logo"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01L6.6 10.8z"/></svg></div>
       <div>
-        <div class="hdr-title">Matrack — Call Logs for the Selected Date and Times</div>
+        <div class="hdr-title">Matrack — Call Logs for the Selected Date and Time Range</div>
         <div class="hdr-sub">Matrack Support Team · Times in: ${tzLabel}</div>
       </div>
       <div class="hdr-right">Generated:<br>${genTime}</div>
     </div>
     <div class="tbl-label">Call Log <span>${dateLabel} · ${calls.length} calls · ${tzLabel}</span></div>
     <table>
-      <thead><tr><th>Contact Number</th><th>Date &amp; Time</th><th>Direction</th><th>Business Line</th><th>Result</th><th>Duration</th><th>Agent / Owner</th></tr></thead>
+      <thead><tr><th>Contact Number</th><th>Date &amp; Time</th><th>Direction</th><th>Result</th><th>Duration</th><th>Business Line</th><th>Agent / Owner</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </body></html>`;
